@@ -4241,6 +4241,27 @@ function handleRoute(){
     return;
   }
 
+  if(hash==='english-group'){
+    var target=document.getElementById('page-interest-groups');
+    if(target)target.classList.add('active');
+    renderEnglishGroup();
+    return;
+  }
+
+  if(hash==='quiz-group'){
+    var target=document.getElementById('page-interest-groups');
+    if(target)target.classList.add('active');
+    renderQuizGroup();
+    return;
+  }
+
+  if(hash==='essay-group'){
+    var target=document.getElementById('page-interest-groups');
+    if(target)target.classList.add('active');
+    renderEssayGroup();
+    return;
+  }
+
   var target=document.getElementById('page-'+hash);
   if(target)target.classList.add('active');
   document.querySelectorAll('.sidebar-links a').forEach(function(a){
@@ -4564,6 +4585,661 @@ function buildCheckinCalendar(data,now){
   }
   html+='</div>';
   return html;
+}
+
+/* ===== QUIZ (FLASHCARD) ===== */
+var _quizState={chapters:[],words:[],current:null,answered:false,correct:0,wrong:0,total:0};
+
+function renderQuizGroup(){
+  if(typeof VOCAB_DATA==='undefined'){
+    document.getElementById('groupsList').innerHTML='<div class="page-header"><div class="back-btn" onclick="navigate(\'interest-groups\')">← 返回</div><div class="page-title">翻卡选答案</div></div><div class="english-panel"><p>词汇数据加载失败，请检查 vocab_data.js 是否存在。</p></div>';
+    return;
+  }
+  var userName=getUserName();
+  var stats=getQuizStats(userName);
+  var lb=getQuizLeaderboard();
+
+  var html='<div class="page-header"><div class="back-btn" onclick="navigate(\'interest-groups\')">← 返回</div><div class="page-title">翻卡选答案</div></div>';
+  html+='<div class="quiz-layout">';
+
+  /* Chapter selector */
+  html+='<div class="section-label">选择章节</div>';
+  html+='<div class="quiz-chapters" id="quizChapters">';
+  var keys=Object.keys(VOCAB_DATA).sort(function(a,b){
+    return parseInt(a.replace('Chapter ',''))-parseInt(b.replace('Chapter ',''));
+  });
+  keys.forEach(function(k){
+    var idx=parseInt(k.replace('Chapter ',''));
+    var ch=VOCAB_DATA[k];
+    var label='Ch'+idx+' '+ch.title;
+    var active=_quizState.chapters.indexOf(k)!==-1?' active':'';
+    html+='<button class="quiz-ch-btn'+active+'" data-ch="'+k+'" onclick="toggleQuizChapter(this,\''+k+'\')">'+label+'</button>';
+  });
+  html+='</div>';
+
+  /* Stats row */
+  html+='<div class="quiz-stats">';
+  html+='<div class="quiz-stat"><div class="num">'+stats.total+'</div><div class="label">总题数</div></div>';
+  html+='<div class="quiz-stat"><div class="num">'+stats.correct+'</div><div class="label">正确</div></div>';
+  html+='<div class="quiz-stat"><div class="num">'+stats.wrong+'</div><div class="label">错误</div></div>';
+  var rate=stats.total>0?Math.round(stats.correct/stats.total*100):0;
+  html+='<div class="quiz-stat"><div class="num">'+rate+'%</div><div class="label">正确率</div></div>';
+  html+='</div>';
+
+  /* Start button */
+  html+='<div class="quiz-start-row">';
+  html+='<button class="quiz-start-btn" id="quizStartBtn" onclick="startQuizRound()"'+(_quizState.chapters.length===0?' disabled':'')+'>开始练习</button>';
+  html+='<span class="quiz-info" id="quizWordCount">'+(_quizState.chapters.length>0?countSelectedWords()+' 词已选':'请选择至少一个章节')+'</span>';
+  html+='</div>';
+
+  /* Quiz card area */
+  html+='<div id="quizCardArea"></div>';
+
+  /* Leaderboard */
+  html+='<div class="section-label" style="margin-top:24px">排行榜 · 前10名</div>';
+  html+='<div class="english-panel" style="padding:0;overflow:hidden">';
+  if(lb.length===0){
+    html+='<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:0.8rem">暂无记录</div>';
+  } else {
+    html+='<table class="quiz-lb-table"><thead><tr><th>排名</th><th>用户</th><th>正确数</th><th>错误率</th></tr></thead><tbody>';
+    lb.forEach(function(item,i){
+      var errRate=item.total>0?Math.round(item.wrong/item.total*100):0;
+      html+='<tr><td class="rank-num">'+(i+1)+'</td><td>'+escHtml(item.name)+'</td><td>'+item.correct+'</td><td>'+errRate+'%</td></tr>';
+    });
+    html+='</tbody></table>';
+  }
+  html+='</div>';
+
+  html+='</div>';
+  document.getElementById('groupsList').innerHTML=html;
+}
+
+function getUserName(){
+  try{var u=JSON.parse(localStorage.getItem('ac_user')||'{}');return u.name||'Rise';}catch(e){return 'Rise';}
+}
+
+function getQuizStats(name){
+  var data=JSON.parse(localStorage.getItem('ac_quiz_stats')||'{}');
+  if(!data[name])data[name]={correct:0,wrong:0,total:0};
+  return data[name];
+}
+
+function saveQuizStats(name,stats){
+  var data=JSON.parse(localStorage.getItem('ac_quiz_stats')||'{}');
+  data[name]=stats;
+  localStorage.setItem('ac_quiz_stats',JSON.stringify(data));
+}
+
+function getQuizLeaderboard(){
+  var data=JSON.parse(localStorage.getItem('ac_quiz_stats')||'{}');
+  var arr=[];
+  Object.keys(data).forEach(function(name){
+    arr.push({name:name,correct:data[name].correct,wrong:data[name].wrong,total:data[name].total});
+  });
+  arr.sort(function(a,b){return b.correct-a.correct;});
+  return arr.slice(0,10);
+}
+
+function countSelectedWords(){
+  var count=0;
+  _quizState.chapters.forEach(function(ch){
+    if(VOCAB_DATA[ch]&&VOCAB_DATA[ch].words)count+=VOCAB_DATA[ch].words.length;
+  });
+  return count;
+}
+
+function toggleQuizChapter(btn,chKey){
+  var idx=_quizState.chapters.indexOf(chKey);
+  if(idx===-1){_quizState.chapters.push(chKey);btn.classList.add('active');}
+  else{_quizState.chapters.splice(idx,1);btn.classList.remove('active');}
+  var countEl=document.getElementById('quizWordCount');
+  var startBtn=document.getElementById('quizStartBtn');
+  if(countEl)countEl.textContent=_quizState.chapters.length>0?countSelectedWords()+' 词已选':'请选择至少一个章节';
+  if(startBtn)startBtn.disabled=_quizState.chapters.length===0;
+}
+
+function startQuizRound(){
+  if(_quizState.chapters.length===0)return;
+  var allWords=[];
+  _quizState.chapters.forEach(function(ch){
+    if(VOCAB_DATA[ch]&&VOCAB_DATA[ch].words){
+      VOCAB_DATA[ch].words.forEach(function(w){
+        allWords.push({en:w.en,phonetic:w.phonetic||'',pos:w.pos||'',zh:w.zh,chapter:ch});
+      });
+    }
+  });
+  if(allWords.length<4)return;
+  _quizState.words=shuffleArray(allWords.slice());
+  _quizState.current=null;
+  _quizState.answered=false;
+  _quizState.correct=0;
+  _quizState.wrong=0;
+  _quizState.total=0;
+  showNextQuizCard();
+}
+
+function showNextQuizCard(){
+  if(_quizState.words.length===0){
+    document.getElementById('quizCardArea').innerHTML='<div class="english-panel" style="text-align:center"><h3>本轮练习结束</h3><p style="margin-top:12px;color:var(--text-secondary)">正确: '+_quizState.correct+' / 总题数: '+_quizState.total+' ('+Math.round(_quizState.correct/Math.max(_quizState.total,1)*100)+'%)</p><button class="quiz-next-btn" style="max-width:300px;margin:16px auto 0" onclick="renderQuizGroup()">返回</button></div>';
+    return;
+  }
+  var word=_quizState.words.shift();
+  _quizState.current=word;
+  _quizState.answered=false;
+
+  /* Build options: 1 correct + 3 distractors */
+  var allZh=[];
+  Object.keys(VOCAB_DATA).forEach(function(ch){
+    if(VOCAB_DATA[ch]&&VOCAB_DATA[ch].words){
+      VOCAB_DATA[ch].words.forEach(function(w){
+        if(w.zh&&w.en!==word.en)allZh.push(w.zh);
+      });
+    }
+  });
+  var distractors=pickRandom(allZh.filter(function(z){return z!==word.zh;}),3);
+  var options=shuffleArray([word.zh].concat(distractors));
+
+  var area=document.getElementById('quizCardArea');
+  var html='<div class="quiz-card-wrap"><div class="quiz-card" id="quizCard">';
+  html+='<div class="quiz-word">'+escHtml(word.en)+'</div>';
+  if(word.phonetic)html+='<div class="quiz-phonetic">'+escHtml(word.phonetic)+'</div>';
+  if(word.pos)html+='<div class="quiz-pos">'+escHtml(word.pos)+'</div>';
+  html+='<div class="quiz-result" id="quizResult" style="display:none"></div>';
+  html+='</div></div>';
+  html+='<div class="quiz-opts" id="quizOpts">';
+  options.forEach(function(opt,i){
+    html+='<button class="quiz-opt-btn" data-opt="'+escAttr(opt)+'" onclick="handleQuizAnswer(this)">'+escHtml(opt)+'</button>';
+  });
+  html+='</div>';
+  html+='<div id="quizNextWrap" style="display:none"><button class="quiz-next-btn" onclick="showNextQuizCard()">下一题 →</button></div>';
+  area.innerHTML=html;
+}
+
+function handleQuizAnswer(btn){
+  if(_quizState.answered||!_quizState.current)return;
+  _quizState.answered=true;
+  var selected=btn.getAttribute('data-opt');
+  var correct=_quizState.current.zh;
+  var isCorrect=selected===correct;
+  var userName=getUserName();
+  var stats=getQuizStats(userName);
+
+  _quizState.total++;
+  if(isCorrect){
+    _quizState.correct++;
+    stats.correct++;
+    btn.classList.add('selected-correct');
+  } else {
+    _quizState.wrong++;
+    stats.wrong++;
+    btn.classList.add('selected-wrong');
+    /* Highlight correct answer */
+    var allBtns=document.querySelectorAll('#quizOpts .quiz-opt-btn');
+    allBtns.forEach(function(b){
+      if(b.getAttribute('data-opt')===correct)b.classList.add('show-correct');
+    });
+  }
+  stats.total++;
+  saveQuizStats(userName,stats);
+
+  /* Disable all options */
+  document.querySelectorAll('#quizOpts .quiz-opt-btn').forEach(function(b){b.disabled=true;});
+
+  /* Show result */
+  var resEl=document.getElementById('quizResult');
+  if(resEl){
+    resEl.style.display='inline-block';
+    resEl.className='quiz-result '+(isCorrect?'correct':'wrong');
+    resEl.textContent=isCorrect?'✓ 正确':'✗ 正确答案: '+correct;
+  }
+  /* Show next button */
+  var nextWrap=document.getElementById('quizNextWrap');
+  if(nextWrap)nextWrap.style.display='block';
+}
+
+/* ===== ESSAY (DAILY WRITING) ===== */
+var _essayState={words:[],submitted:false};
+
+function renderEssayGroup(){
+  if(typeof VOCAB_DATA==='undefined'){
+    document.getElementById('groupsList').innerHTML='<div class="page-header"><div class="back-btn" onclick="navigate(\'interest-groups\')">← 返回</div><div class="page-title">每日作文</div></div><div class="english-panel"><p>词汇数据加载失败，请检查 vocab_data.js 是否存在。</p></div>';
+    return;
+  }
+  var today=getTodayKey();
+  var savedEssay=localStorage.getItem('ac_essay_'+today);
+  var history=getEssayHistory();
+
+  /* Pick 20 words for today (deterministic by date) */
+  var words=getDailyWords(today);
+  _essayState.words=words;
+  _essayState.submitted=!!savedEssay;
+
+  var html='<div class="page-header"><div class="back-btn" onclick="navigate(\'interest-groups\')">← 返回</div><div class="page-title">每日作文</div></div>';
+  html+='<div class="essay-layout">';
+
+  /* Date label */
+  var now=new Date();
+  html+='<div class="essay-date-label">'+now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 · 今日20词</div>';
+
+  /* Word chips */
+  html+='<div class="essay-words-bar" id="essayWordsBar">';
+  words.forEach(function(w){
+    html+='<span class="essay-word-chip" data-word="'+escAttr(w.en)+'">'+escHtml(w.en)+'<span class="chip-tip">'+escHtml(w.zh)+'</span></span>';
+  });
+  html+='</div>';
+
+  /* Textarea */
+  html+='<textarea class="essay-textarea" id="essayTextarea" placeholder="Use the 20 words above to write an English essay (at least 150 words)..." oninput="onEssayInput()"'+(savedEssay?' disabled':'')+'></textarea>';
+  if(savedEssay){
+    document.addEventListener('DOMContentLoaded',function(){
+      var ta=document.getElementById('essayTextarea');
+      if(ta)ta.value=JSON.parse(savedEssay).text||'';
+    });
+  }
+
+  /* Bottom bar */
+  html+='<div class="essay-bottom-bar">';
+  html+='<div class="essay-word-count" id="essayWordCount">字数: <span>0</span> / 最低 150 词</div>';
+  html+='<button class="essay-submit-btn" id="essaySubmitBtn" onclick="submitEssay()"'+(savedEssay?' style="display:none"':'')+'>提交作文</button>';
+  html+='</div>';
+
+  /* Result area */
+  html+='<div id="essayResultArea"></div>';
+
+  /* If already submitted today, show results */
+  if(savedEssay){
+    var essayData=JSON.parse(savedEssay);
+    setTimeout(function(){showEssayResults(essayData);},100);
+  }
+
+  /* History */
+  html+='<div class="section-label" style="margin-top:28px">写作历史</div>';
+  if(history.length===0){
+    html+='<div class="english-panel" style="text-align:center;color:var(--text-muted);font-size:0.8rem;padding:20px">暂无记录</div>';
+  } else {
+    html+='<div class="essay-history">';
+    history.forEach(function(h){
+      html+='<div class="essay-history-item"><span class="eh-date">'+h.date+'</span><span>'+h.words+'词</span><span class="eh-score">总分 '+h.score+'</span></div>';
+    });
+    html+='</div>';
+  }
+
+  html+='</div>';
+  document.getElementById('groupsList').innerHTML=html;
+
+  /* Restore text if saved */
+  if(savedEssay){
+    var ta=document.getElementById('essayTextarea');
+    if(ta)ta.value=JSON.parse(savedEssay).text||'';
+    onEssayInput();
+  }
+}
+
+function getTodayKey(){
+  var now=new Date();
+  return now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
+}
+
+function getDailyWords(dateKey){
+  /* Seeded random by date */
+  var allWords=[];
+  if(typeof VOCAB_DATA==='undefined')return [];
+  Object.keys(VOCAB_DATA).forEach(function(ch){
+    if(VOCAB_DATA[ch]&&VOCAB_DATA[ch].words){
+      VOCAB_DATA[ch].words.forEach(function(w){
+        allWords.push({en:w.en,phonetic:w.phonetic||'',pos:w.pos||'',zh:w.zh});
+      });
+    }
+  });
+  /* Simple hash from date */
+  var hash=0;
+  for(var i=0;i<dateKey.length;i++){hash=((hash<<5)-hash)+dateKey.charCodeAt(i);hash|=0;}
+  hash=Math.abs(hash);
+  /* Shuffle with seed */
+  var shuffled=allWords.slice();
+  for(var j=shuffled.length-1;j>0;j--){
+    hash=(hash*1103515245+12345)&0x7fffffff;
+    var k=hash%(j+1);
+    var tmp=shuffled[j];shuffled[j]=shuffled[k];shuffled[k]=tmp;
+  }
+  return shuffled.slice(0,20);
+}
+
+function onEssayInput(){
+  var ta=document.getElementById('essayTextarea');
+  var countEl=document.getElementById('essayWordCount');
+  if(!ta||!countEl)return;
+  var text=ta.value.trim();
+  var words=text?text.split(/\s+/).length:0;
+  var span=countEl.querySelector('span');
+  if(span){
+    span.textContent=words;
+    span.className=words>=150?'':'warn';
+  }
+  /* Highlight used target words */
+  highlightUsedWords(text);
+}
+
+function highlightUsedWords(text){
+  var bar=document.getElementById('essayWordsBar');
+  if(!bar)return;
+  var lower=text.toLowerCase();
+  bar.querySelectorAll('.essay-word-chip').forEach(function(chip){
+    var w=chip.getAttribute('data-word').toLowerCase();
+    if(lower.indexOf(w)!==-1)chip.classList.add('used');
+    else chip.classList.remove('used');
+  });
+}
+
+function submitEssay(){
+  var ta=document.getElementById('essayTextarea');
+  if(!ta)return;
+  var text=ta.value.trim();
+  var words=text?text.split(/\s+/).length:0;
+  if(words<150){alert('作文至少需要150个单词，当前: '+words+' 词');return;}
+
+  var result=evaluateEssay(text,_essayState.words);
+  var today=getTodayKey();
+  var essayData={date:today,text:text,words:words,result:result};
+  localStorage.setItem('ac_essay_'+today,JSON.stringify(essayData));
+  _essayState.submitted=true;
+  ta.disabled=true;
+  document.getElementById('essaySubmitBtn').style.display='none';
+  showEssayResults(essayData);
+}
+
+function evaluateEssay(text,targetWords){
+  var sentences=text.split(/[.!?]+/).filter(function(s){return s.trim().length>0;});
+  var textLower=text.toLowerCase();
+  var tokens=textLower.replace(/[^a-z\s'-]/g,' ').split(/\s+/).filter(function(t){return t.length>0;});
+
+  /* 1. Spelling check */
+  var targetEnSet={};
+  targetWords.forEach(function(w){targetEnSet[w.en.toLowerCase()]=true;});
+  var misspelled=findMisspelled(tokens,targetEnSet);
+
+  /* 2. Grammar check */
+  var grammarErrors=findGrammarErrors(text,sentences);
+
+  /* 3. Target word coverage */
+  var usedCount=0;
+  targetWords.forEach(function(w){
+    if(textLower.indexOf(w.en.toLowerCase())!==-1)usedCount++;
+  });
+  var coverage=Math.round(usedCount/targetWords.length*100);
+
+  /* 4. Fluency */
+  var avgLen=sentences.length>0?tokens.length/sentences.length:0;
+  var connWords=['however','therefore','moreover','furthermore','although','because','since','while','nevertheless','consequently','in addition','on the other hand','for example','in conclusion','as a result','meanwhile','otherwise'];
+  var connCount=0;
+  connWords.forEach(function(cw){
+    var re=new RegExp('\\b'+cw+'\\b','gi');
+    var m=text.match(re);
+    if(m)connCount+=m.length;
+  });
+
+  /* Calculate scores */
+  var spellingScore=Math.max(0,Math.min(100,100-misspelled.length*8));
+  var grammarScore=Math.max(0,Math.min(100,100-grammarErrors.length*10));
+  var fluencyScore=Math.max(0,Math.min(100,Math.round(coverage*0.5+Math.min(connCount*5,25)+(avgLen>=8&&avgLen<=25?15:5)+(sentences.length>=5?10:0))));
+  var overallScore=Math.round(spellingScore*0.25+grammarScore*0.3+fluencyScore*0.25+coverage*0.2);
+
+  /* Build feedback */
+  var feedback=[];
+  if(coverage>=80)feedback.push({type:'good',msg:'目标词覆盖率 '+coverage+'% ('+usedCount+'/'+targetWords.length+')，用词丰富度很好。'});
+  else if(coverage>=50)feedback.push({type:'sug',msg:'目标词覆盖率 '+coverage+'% ('+usedCount+'/'+targetWords.length+')，建议更多使用今日目标词汇。'});
+  else feedback.push({type:'err',msg:'目标词覆盖率仅 '+coverage+'% ('+usedCount+'/'+targetWords.length+')，请确保使用更多目标词。'});
+
+  if(misspelled.length===0)feedback.push({type:'good',msg:'未发现明显拼写错误。'});
+  else{
+    var shown=misspelled.slice(0,5).map(function(m){return '"'+m.word+'"';}).join('、');
+    feedback.push({type:'err',msg:'疑似拼写错误: '+shown+'。请检查拼写。'});
+  }
+
+  if(grammarErrors.length===0)feedback.push({type:'good',msg:'语法结构基本正确，行文通顺。'});
+  else{
+    grammarErrors.slice(0,3).forEach(function(e){
+      feedback.push({type:'err',msg:e.msg});
+    });
+  }
+
+  if(connCount>=3)feedback.push({type:'good',msg:'连接词使用丰富 ('+connCount+'处)，文章衔接自然。'});
+  else if(connCount>=1)feedback.push({type:'sug',msg:'连接词使用较少，建议增加过渡词如 however, therefore, moreover 等。'});
+  else feedback.push({type:'sug',msg:'未使用明显连接词，建议添加 however, furthermore, for example 等增强文章连贯性。'});
+
+  if(avgLen<6)feedback.push({type:'sug',msg:'平均句长偏短 ('+avgLen.toFixed(1)+'词/句)，句式可能过于简单。'});
+  else if(avgLen>30)feedback.push({type:'sug',msg:'平均句长偏长 ('+avgLen.toFixed(1)+'词/句)，建议拆分长句。'});
+
+  /* Model essay */
+  var modelEssay=generateModelEssay(targetWords);
+
+  return {
+    spelling:spellingScore,
+    grammar:grammarScore,
+    fluency:fluencyScore,
+    overall:overallScore,
+    coverage:coverage,
+    usedCount:usedCount,
+    feedback:feedback,
+    modelEssay:modelEssay,
+    misspelled:misspelled.map(function(m){return m.word;}),
+    grammarErrs:grammarErrors.map(function(e){return e.msg;})
+  };
+}
+
+function findMisspelled(tokens,targetSet){
+  var commonWords={'the':1,'be':1,'to':1,'of':1,'and':1,'a':1,'in':1,'that':1,'have':1,'i':1,'it':1,'for':1,'not':1,'on':1,'with':1,'he':1,'as':1,'you':1,'do':1,'at':1,'this':1,'but':1,'his':1,'by':1,'from':1,'they':1,'we':1,'say':1,'her':1,'she':1,'or':1,'an':1,'will':1,'my':1,'one':1,'all':1,'would':1,'there':1,'their':1,'what':1,'so':1,'up':1,'out':1,'if':1,'about':1,'who':1,'get':1,'which':1,'go':1,'me':1,'when':1,'make':1,'can':1,'like':1,'time':1,'no':1,'just':1,'him':1,'know':1,'take':1,'people':1,'into':1,'year':1,'your':1,'good':1,'some':1,'could':1,'them':1,'see':1,'other':1,'than':1,'then':1,'now':1,'look':1,'only':1,'come':1,'its':1,'over':1,'think':1,'also':1,'back':1,'after':1,'use':1,'two':1,'how':1,'our':1,'work':1,'first':1,'well':1,'way':1,'even':1,'new':1,'want':1,'because':1,'any':1,'these':1,'give':1,'day':1,'most':1,'us':1,'is':1,'are':1,'was':1,'were':1,'been':1,'has':1,'had':1,'did':1,'does':1,'am':1,'being':1,'doing':1,'having':1,'shall':1,'should':1,'may':1,'might':1,'must':1,'need':1,'each':1,'every':1,'many':1,'much':1,'own':1,'few':1,'such':1,'more':1,'very':1,'too':1,'here':1,'where':1,'why':1,'still':1,'both':1,'while':1,'before':1,'between':1,'through':1,'during':1,'without':1,'again':1,'once':1,'until':1,'down':1,'off':1,'near':1,'above':1,'below':1,'same':1,'another':1,'those':1,'never':1,'always':1,'often':1,'sometimes':1,'already':1,'maybe':1,'perhaps':1,'however':1,'therefore':1,'although':1,'although':1,'moreover':1,'furthermore':1,'nevertheless':1,'meanwhile':1,'otherwise':1,'thus':1,'hence':1,'yet':1,'rather':1,'quite':1,'enough':1,'least':1,'less':1,'better':1,'worse':1,'best':1,'last':1,'next':1,'long':1,'great':1,'little':1,'right':1,'old':1,'big':1,'high':1,'small':1,'large':1,'different':1,'important':1,'early':1,'young':1,'able':1,'possible':1,'sure':1,'true':1,'real':1,'full':1,'whole':1,'certain':1,'clear':1,'public':1,'particular':1,'special':1,'difficult':1,'hard':1,'easy':1,'simple':1,'strong':1,'poor':1,'rich':1,'happy':1,'sad':1,'beautiful':1,'happy':1,'free':1,'cold':1,'hot':1,'warm':1,'cool':1,'dark':1,'light':1,'heavy':1,'deep':1,'wide':1,'thin':1,'thick':1,'fast':1,'slow':1,'quick':1,'sharp':1,'soft':1,'flat':1,'round':1,'straight':1,'wide':1,'narrow':1,'bright':1,'dull':1,'wet':1,'dry':1,'clean':1,'fresh':1,'safe':1,'dangerous':1,'strong':1,'weak':1,'healthy':1,'sick':1,'alive':1,'dead':1,'open':1,'closed':1,'empty':1,'available':1,'present':1,'absent':1,'similar':1,'separate':1,'various':1,'several':1,'single':1,'double':1,'half':1,'quarter':1,'third':1,'second':1,'fourth':1,'fifth':1,'tenth':1,'hundred':1,'thousand':1,'million':1,'billion':1,'zero':1,'none':1,'nothing':1,'something':1,'anything':1,'everything':1,'everyone':1,'someone':1,'anyone':1,'nobody':1,'somebody':1,'myself':1,'yourself':1,'himself':1,'herself':1,'itself':1,'ourselves':1,'themselves':1,'man':1,'woman':1,'child':1,'boy':1,'girl':1,'person':1,'friend':1,'family':1,'father':1,'mother':1,'son':1,'daughter':1,'brother':1,'sister':1,'husband':1,'wife':1,'teacher':1,'student':1,'doctor':1,'world':1,'country':1,'city':1,'town':1,'village':1,'home':1,'house':1,'school':1,'street':1,'road':1,'river':1,'sea':1,'mountain':1,'tree':1,'flower':1,'animal':1,'dog':1,'cat':1,'bird':1,'fish':1,'horse':1,'food':1,'water':1,'bread':1,'milk':1,'meat':1,'fruit':1,'book':1,'pen':1,'paper':1,'music':1,'art':1,'game':1,'sport':1,'color':1,'red':1,'blue':1,'green':1,'black':1,'white':1,'hand':1,'head':1,'eye':1,'face':1,'heart':1,'body':1,'mind':1,'life':1,'death':1,'love':1,'war':1,'peace':1,'power':1,'money':1,'form':1,'state':1,'place':1,'point':1,'part':1,'group':1,'company':1,'system':1,'program':1,'question':1,'fact':1,'study':1,'number':1,'order':1,'level':1,'area':1,'rate':1,'change':1,'sense':1,'end':1,'start':1,'course':1,'process':1,'effect':1,'result':1,'idea':1,'problem':1,'matter':1,'field':1,'view':1,'purpose':1,'type':1,'kind':1,'example':1,'case':1,'effect':1,'nature':1,'issue':1,'role':1,'effort':1,'center':1,'side':1,'age':1,'experience':1,'research':1,'education':1,'development':1,'performance':1,'training':1,'growth':1,'support':1,'energy':1,'attention':1,'action':1,'progress':1,'control':1,'influence':1,'movement':1,'pressure':1,'success':1,'failure':1,'chance':1,'risk':1,'condition':1,'situation':1,'position':1,'opportunity':1,'environment':1,'society':1,'culture':1,'science':1,'technology':1,'health':1,'strength':1,'ability':1,'quality':1,'value':1,'degree':1,'temperature':1,'structure':1,'muscle':1,'exercise':1,'activity':1,'recovery':1,'nutrition':1,'diet':1,'sleep':1,'stress':1,'goal':1,'plan':1,'method':1,'approach':1,'strategy':1,'technique':1,'practice':1,'skill':1,'evidence':1,'data':1,'analysis':1,'theory':1,'principle':1,'law':1,'rule':1,'standard':1,'measure':1,'weight':1,'height':1,'distance':1,'speed':1,'force':1,'mass':1,'volume':1,'density':1,'surface':1,'range':1,'limit':1,'maximum':1,'minimum':1,'average':1,'total':1,'amount':1,'increase':1,'decrease':1,'improve':1,'develop':1,'create':1,'produce':1,'build':1,'form':1,'provide':1,'require':1,'include':1,'involve':1,'affect':1,'cause':1,'lead':1,'help':1,'allow':1,'make':1,'keep':1,'hold':1,'set':1,'put':1,'turn':1,'move':1,'run':1,'begin':1,'happen':1,'occur':1,'show':1,'appear':1,'seem':1,'remain':1,'stay':1,'continue':1,'suggest':1,'consider':1,'determine':1,'indicate':1,'explain':1,'describe':1,'compare':1,'relate':1,'connect':1,'apply':1,'achieve':1,'reduce':1,'maintain':1,'establish':1,'identify':1,'define':1,'recognize':1,'observe':1,'measure':1,'calculate':1,'evaluate':1,'assess':1,'test':1,'examine':1,'explore':1,'investigate':1,'review':1,'discuss':1,'express':1,'communicate':1,'demonstrate':1,'prove':1,'confirm':1,'indicate':1,'report':1,'state':1,'claim':1,'argue':1,'conclude':1,'decide':1,'choose':1,'select':1,'prefer':1,'agree':1,'believe':1,'expect':1,'suppose':1,'imagine':1,'realize':1,'understand':1,'remember':1,'forget':1,'learn':1,'study':1,'teach':1,'read':1,'write':1,'speak':1,'listen':1,'hear':1,'watch':1,'notice':1,'feel':1,'touch':1,'taste':1,'smell':1,'think':1,'know':1,'mean':1,'guess':1,'wonder':1,'doubt':1,'hope':1,'wish':1,'dream':1,'fear':1,'worry':1,'enjoy':1,'like':1,'love':1,'hate':1,'care':1,'mind':1,'matter':1,'bother':1,'satisfy':1,'please':1,'surprise':1,'impress':1,'inspire':1,'encourage':1,'motivate':1,'challenge':1,'push':1,'force':1,'prevent':1,'avoid':1,'protect':1,'defend':1,'save':1,'spend':1,'waste':1,'gain':1,'lose':1,'earn':1,'win':1,'fail':1,'try':1,'attempt':1,'manage':1,'succeed':1,'complete':1,'finish':1,'stop':1,'quit':1,'leave':1,'enter':1,'arrive':1,'reach':1,'return':1,'cross':1,'pass':1,'follow':1,'carry':1,'bring':1,'send':1,'receive':1,'accept':1,'offer':1,'share':1,'join':1,'meet':1,'visit':1,'attend':1,'participate':1,'compete':1,'perform':1,'present':1,'represent':1,'serve':1,'support':1,'help':1,'assist':1,'guide':1,'lead':1,'manage':1,'organize':1,'prepare':1,'design':1,'develop':1,'create':1,'invent':1,'discover':1,'introduce':1,'establish':1,'found':1,'start':1,'launch':1,'open':1,'close':1,'end':1,'die':1,'kill':1,'hurt':1,'injure':1,'damage':1,'destroy':1,'break':1,'fix':1,'repair':1,'solve':1,'deal':1,'handle':1,'face':1,'confront':1,'overcome':1,'survive':1,'recover':1,'heal':1,'grow':1,'rise':1,'fall':1,'drop':1,'climb':1,'jump':1,'fly':1,'swim':1,'walk':1,'drive':1,'ride':1,'travel':1,'explore':1,'wander':1,'march':1,'stride':1,'step':1,'pace':1,'rush':1,'hurry':1,'slow':1,'wait':1,'delay':1,'pause':1,'rest':1,'relax':1,'breathe':1,'live':1,'exist':1,'be':1,'am':1,'are':1,'is':1,'was':1,'were':1};
+  var misspelled=[];
+  var seen={};
+  tokens.forEach(function(t){
+    var clean=t.replace(/[^a-z]/g,'');
+    if(clean.length<3)return;
+    if(seen[clean])return;
+    if(targetSet[clean])return;
+    if(commonWords[clean])return;
+    /* Simple heuristic: if word has unusual letter combinations */
+    if(/[^aeiou]{5,}/.test(clean)&&!/^[^aeiou]*[aeiou]/.test(clean)){
+      misspelled.push({word:clean});seen[clean]=true;
+    }
+  });
+  return misspelled.slice(0,10);
+}
+
+function findGrammarErrors(text,sentences){
+  var errors=[];
+  /* Check for double spaces */
+  if(/  /.test(text))errors.push({msg:'存在多余空格，建议使用单词间单个空格。'});
+  /* Check for missing capitalization at sentence start */
+  sentences.forEach(function(s){
+    var trimmed=s.trim();
+    if(trimmed.length>0&&trimmed[0]!=='A'&&trimmed[0]!=='I'&&/[a-z]/.test(trimmed[0])&&trimmed[0]===trimmed[0].toLowerCase()){
+      /* This is simplistic; skip for now */
+    }
+  });
+  /* Check for repeated words (e.g., "the the") */
+  var repMatch=text.match(/\b(\w+)\s+\1\b/gi);
+  if(repMatch&&repMatch.length>0){
+    errors.push({msg:'发现重复词语: "'+repMatch[0]+'"，请检查。'});
+  }
+  /* Check for common errors */
+  if(/\bi\b(?![''])/.test(text)&&!/ I /.test(text)){
+    /* lowercase "i" as pronoun */
+    var m=text.match(/\bi\b/g);
+    if(m&&m.length>1)errors.push({msg:'代词 "I" 应大写。'});
+  }
+  /* Check subject-verb agreement patterns */
+  if(/\bhe\s+have\b/i.test(text)||/\bshe\s+have\b/i.test(text)||/\bit\s+have\b/i.test(text)){
+    errors.push({msg:'主谓一致错误: he/she/it 应搭配 "has" 而非 "have"。'});
+  }
+  if(/\bthey\s+is\b/i.test(text)||/\bwe\s+is\b/i.test(text)){
+    errors.push({msg:'主谓一致错误: they/we 应搭配 "are" 而非 "is"。'});
+  }
+  /* Check for "a" before vowel sounds */
+  if(/\ba\s+[aeiou]\w{2,}/gi.test(text)){
+    var aBeforeVowel=text.match(/\ba\s+([aeiou]\w{2,})/gi);
+    if(aBeforeVowel){
+      var exceptions=['a unique','a university','a uniform','a unit','a useful','a european','a one','a once'];
+      aBeforeVowel.forEach(function(phrase){
+        var isExc=exceptions.some(function(ex){return phrase.toLowerCase().indexOf(ex)===0;});
+        if(!isExc)errors.push({msg:'冠词使用可能不当: "'+phrase.trim()+'" 可能需要用 "an"。'});
+      });
+    }
+  }
+  return errors.slice(0,5);
+}
+
+function generateModelEssay(targetWords){
+  /* Pre-defined templates, pick one and insert target words */
+  var templates=[
+    {
+      topic:'health',
+      text:'In modern society, maintaining optimal HEALTH and WELL-BEING requires a comprehensive APPROACH that integrates physical ACTIVITY, proper NUTRITION, and adequate RECOVERY. Research EVIDENCE consistently demonstrates that regular EXERCISE significantly IMPROVES cardiovascular FUNCTION and muscular STRENGTH. Furthermore, a balanced DIET rich in essential NUTRIENTS supports the body RECOVERY process and enhances overall PERFORMANCE. It is IMPORTANT to note that SLEEP quality plays a crucial ROLE in muscle REPAIR and cognitive FUNCTION. Therefore, individuals should DEVELOP sustainable habits that promote long-term HEALTH outcomes rather than seeking短期 RESULTS.'
+    },
+    {
+      topic:'environment',
+      text:'The natural ENVIRONMENT encompasses the ATMOSPHERE, HYDROSPHERE, and LITHOSPHERE that together form the earth surface. Human ACTIVITIES have significantly ALTERED the delicate BALANCE of these systems. Carbon DIOXIDE EMISSIONS continue to RISE, contributing to global TEMPERATURE increases. Scientists have OBSERVED dramatic CHANGES in weather PATTERNS and ocean CURRENTS. To ADDRESS these challenges, we must DEVELOP innovative SOLUTIONS that REDUCE our environmental IMPACT while maintaining ECONOMIC growth. The EVIDENCE clearly INDICATES that collective ACTION at both individual and societal LEVELS is ESSENTIAL for preserving our planet for future GENERATIONS.'
+    },
+    {
+      topic:'education',
+      text:'EDUCATION serves as the FOUNDATION for personal DEVELOPMENT and societal PROGRESS. Effective LEARNING requires not only the ACQUISITION of KNOWLEDGE but also the DEVELOPMENT of critical THINKING SKILLS and practical ABILITIES. Research INDICATES that consistent PRACTICE and active ENGAGEMENT significantly enhance INFORMATION retention and SKILL mastery. Furthermore, the INTEGRATION of technology into EDUCATIONAL SETTINGS has TRANSFORMED traditional APPROACHES to TEACHING and LEARNING. Teachers should DESIGN curricula that CHALLENGE students to APPLY theoretical CONCEPTS to real-world SITUATIONS. Ultimately, the GOAL of EDUCATION extends beyond academic ACHIEVEMENT to cultivate well-rounded INDIVIDUALS capable of CONTRIBUTING meaningfully to society.'
+    },
+    {
+      topic:'technology',
+      text:'TECHNOLOGY has FUNDAMENTALLY TRANSFORMED every ASPECT of modern LIFE. From COMMUNICATION to TRANSPORTATION, innovative SOLUTIONS continue to RESHAPE how we INTERACT with the world. The DEVELOPMENT of artificial INTELLIGENCE and machine LEARNING ALGORITHMS has enabled unprecedented ADVANCES in data ANALYSIS and decision-MAKING. However, these TECHNOLOGICAL BREAKTHROUGHS also present significant CHALLENGES regarding PRIVACY, SECURITY, and ethical CONSIDERATIONS. Researchers must CAREFULLY EVALUATE the potential IMPACTS of emerging TECHNOLOGIES before widespread IMPLEMENTATION. Furthermore, ensuring EQUITABLE ACCESS to TECHNOLOGICAL RESOURCES remains a critical PRIORITY for reducing global INEQUALITIES and promoting SUSTAINABLE DEVELOPMENT across all SECTORS of society.'
+    },
+    {
+      topic:'fitness',
+      text:'A well-structured TRAINING PROGRAM should incorporate PROGRESSIVE OVERLOAD, periodization, and adequate RECOVERY to maximize STRENGTH gains and minimize INJURY risk. The PRINCIPLES of exercise SCIENCE indicate that muscular ADAPTATION occurs when the body is EXPOSED to systematically increasing DEMANDS. Key VARIABLES such as VOLUME, INTENSITY, and FREQUENCY must be CAREFULLY MANIPULATED across different TRAINING PHASES to optimize PERFORMANCE outcomes. Evidence-BASED PRACTICE recommends that individuals TRACK their PROGRESS using objective MEASURES and adjust PROGRAMMING accordingly. Furthermore, proper NUTRITION and SLEEP are ESSENTIAL COMPONENTS of any effective TRAINING regimen, as they directly INFLUENCE RECOVERY capacity and overall RESULTS.'
+    }
+  ];
+
+  /* Pick template closest to word themes */
+  var targetLower=targetWords.map(function(w){return w.en.toLowerCase();});
+  var themeScores=templates.map(function(t,idx){
+    var score=0;
+    var tWords=t.text.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/);
+    targetLower.forEach(function(tw){
+      if(tWords.indexOf(tw)!==-1)score++;
+    });
+    return {idx:idx,score:score};
+  });
+  themeScores.sort(function(a,b){return b.score-a.score;});
+  var chosen=templates[themeScores[0].idx];
+  var essay=chosen.text;
+
+  /* Replace template placeholder words with actual target words */
+  var templateWords=essay.match(/[A-Z][A-Z]+/g)||[];
+  targetWords.forEach(function(w,i){
+    if(i<templateWords.length){
+      var re=new RegExp('\\b'+templateWords[i]+'\\b');
+      essay=essay.replace(re,w.en);
+    }
+  });
+
+  /* Clean up any remaining ALL-CAPS words */
+  essay=essay.replace(/\b([A-Z]{3,})\b/g,function(match){
+    return match.charAt(0)+match.slice(1).toLowerCase();
+  });
+
+  return essay;
+}
+
+function showEssayResults(essayData){
+  var area=document.getElementById('essayResultArea');
+  if(!area)return;
+  var r=essayData.result;
+  var html='<div class="essay-result">';
+
+  /* Scores */
+  html+='<div class="essay-scores">';
+  html+=buildScoreCard('Grammar',r.grammar);
+  html+=buildScoreCard('Spelling',r.spelling);
+  html+=buildScoreCard('Fluency',r.fluency);
+  html+=buildScoreCard('Overall',r.overall);
+  html+='</div>';
+
+  /* Coverage */
+  html+='<div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:20px">目标词覆盖率: <strong>'+r.coverage+'%</strong> ('+r.usedCount+'/20) · 全文 '+essayData.words+' 词</div>';
+
+  /* Feedback */
+  html+='<div class="essay-section-title">修改意见</div>';
+  html+='<ul class="essay-feedback-list">';
+  r.feedback.forEach(function(fb){
+    var cls=fb.type==='err'?'err':fb.type==='sug'?'sug':'good';
+    var label=fb.type==='err'?'错误':fb.type==='sug'?'建议':'亮点';
+    html+='<li><span class="fb-type '+cls+'">'+label+'</span>'+escHtml(fb.msg)+'</li>';
+  });
+  html+='</ul>';
+
+  /* Model essay */
+  html+='<div class="essay-section-title">范文参考</div>';
+  html+='<div class="essay-model-essay">';
+  var modelText=r.modelEssay;
+  /* Highlight target words in model */
+  _essayState.words.forEach(function(w){
+    var re=new RegExp('\\b('+w.en.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')\\b','gi');
+    modelText=modelText.replace(re,'<span class="target-word">$1</span>');
+  });
+  html+='<p>'+modelText+'</p>';
+  html+='</div>';
+
+  html+='</div>';
+  area.innerHTML=html;
+}
+
+function buildScoreCard(label,score){
+  var html='<div class="essay-score-card">';
+  html+='<div class="score-num">'+score+'</div>';
+  html+='<div class="score-label">'+label+'</div>';
+  html+='<div class="score-bar"><div class="score-fill" style="width:'+score+'%"></div></div>';
+  html+='</div>';
+  return html;
+}
+
+function getEssayHistory(){
+  var history=[];
+  for(var i=0;i<localStorage.length;i++){
+    var key=localStorage.key(i);
+    if(key&&key.indexOf('ac_essay_')===0){
+      try{
+        var data=JSON.parse(localStorage.getItem(key));
+        if(data&&data.date){
+          history.push({
+            date:data.date,
+            words:data.words||0,
+            score:data.result?data.result.overall:0
+          });
+        }
+      }catch(e){}
+    }
+  }
+  history.sort(function(a,b){return b.date<a.date?-1:1;});
+  return history.slice(0,10);
+}
+
+/* ===== UTILITY ===== */
+function shuffleArray(arr){
+  var a=arr.slice();
+  for(var i=a.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var tmp=a[i];a[i]=a[j];a[j]=tmp;
+  }
+  return a;
+}
+
+function pickRandom(arr,n){
+  var shuffled=shuffleArray(arr);
+  return shuffled.slice(0,n);
+}
+
+function escHtml(s){
+  if(!s)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(s){
+  if(!s)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 /* ===== TRAINING PLAN ===== */
@@ -5021,59 +5697,6 @@ function bindNewTrainingEvents(week,dayIdx){
 }
 
 
-/* ===== ROUTING OVERRIDE for english group ===== */
-var _origHandleRoute = handleRoute;
-function handleRoute(){
-  var hash=location.hash.replace('#','')||'home';
-  var pages=document.querySelectorAll('.page');
-  pages.forEach(function(p){p.classList.remove('active')});
-
-  /* Book detail sub-route */
-  if(hash.indexOf('book-detail-')===0){
-    var target=document.getElementById('page-weekly-book');
-    if(target)target.classList.add('active');
-    document.querySelectorAll('.sidebar-links a').forEach(function(a){
-      a.classList.toggle('active',a.dataset.page==='weekly-book');
-    });
-    var bookId=hash.replace('book-detail-','');
-    renderBookDetail(bookId);
-    window.scrollTo(0,0);
-    return;
-  }
-
-  if(hash==='english-group'){
-    var target=document.getElementById('page-interest-groups');
-    if(target)target.classList.add('active');
-    renderEnglishGroup();
-    return;
-  }
-
-  if(hash==='quiz-group'){
-    var target=document.getElementById('page-interest-groups');
-    if(target)target.classList.add('active');
-    renderQuizGroup();
-    return;
-  }
-
-  if(hash==='essay-group'){
-    var target=document.getElementById('page-interest-groups');
-    if(target)target.classList.add('active');
-    renderEssayGroup();
-    return;
-  }
-
-  var target=document.getElementById('page-'+hash);
-  if(target)target.classList.add('active');
-  document.querySelectorAll('.sidebar-links a').forEach(function(a){
-    a.classList.toggle('active',a.dataset.page===hash);
-  });
-  if(hash==='training')tpInit();
-  if(hash==='papers')renderPapers();
-  if(hash==='daily-lit')renderDailyLit();
-  if(hash==='weekly-book')renderWeeklyBook();
-  if(hash==='interest-groups')renderInterestGroups();
-  if(hash==='home')renderHome();
-}
 
 
 function renderActivityFeed(){
