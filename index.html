@@ -902,6 +902,7 @@ button{cursor:pointer;border:none;background:none}
     <a href="#daily-lit" data-page="daily-lit"><span class="nav-icon">◆</span>每日文献</a>
     <a href="#weekly-book" data-page="weekly-book"><span class="nav-icon">▣</span>每周一本书</a>
     <a href="#training" data-page="training"><span class="nav-icon">▤</span>训练计划</a>
+    <a href="#dashboard" data-page="dashboard"><span class="nav-icon">◉</span>数据看板</a>
     <a href="#interest-groups" data-page="interest-groups"><span class="nav-icon">◎</span>兴趣小组</a>
   </div>
   <div class="sidebar-bottom">
@@ -1053,6 +1054,15 @@ button{cursor:pointer;border:none;background:none}
     </div>
   </div>
 
+
+  <!-- DASHBOARD -->
+  <div class="page" id="page-dashboard">
+    <div class="page-header">
+      <div class="back-btn" onclick="navigate('home')">← 返回</div>
+      <div class="page-title">数据看板</div>
+    </div>
+    <div id="dashboardContent"></div>
+  </div>
 
   <!-- INTEREST GROUPS -->
   <div class="page" id="page-interest-groups">
@@ -4089,7 +4099,8 @@ const DAILY_LIT_DATA = [
   {title:"Core stability training and injury prevention",authors:"Huxel Bliven K, Anderson BE.",journal:"Journal of Sport Rehabilitation",year:2018,finding:"核心稳定训练可降低下背痛和膝关节损伤风险，但不能直接提升运动表现。",advice:"每周安排2-3次核心训练，包含抗伸展、抗旋转和抗侧屈三类动作。"},
   {title:"Periodization of nutrition for strength athletes",authors:"Aragon AA, et al.",journal:"Journal of the International Society of Sports Nutrition",year:2019,finding:"与训练周期匹配的碳水循环策略（高碳日/低碳日）可优化恢复和体成分。",advice:"高容量训练日增加碳水至4-6g/kg，减载日降至2-3g/kg，蛋白质每日恒定为1.6-2.0g/kg。"},
   {title:"Flexibility vs stiffness: Implications for performance and injury",authors:"Herda TJ, Ryan ED.",journal:"Sports Medicine",year:2016,finding:"过度柔韧性可能降低力量表现，适度肌腱刚性（stiffness）对力量传递和爆发力更重要。",advice:"力量运动员应以力量训练中的全幅度代替传统拉伸，重点发展功能性ROM而非最大柔韧性。"},
-  {title:"Tracking training load: Methods and practical applications",authors:"Impellizzeri FM, et al.",journal:"International Journal of Sports Physiology and Performance",year:2020,finding:"RPE×训练时长（sRPE）是最实用的内部负荷监控方法，与客观指标高度相关。",advice:"每次训练结束后记录RPE（1-10量表），计算训练负荷=RPE×分钟数，用于监控疲劳和规划减载。"}
+  {title:"Tracking training load: Methods and practical applications",authors:"Impellizzeri FM, et al.",journal:"International Journal of Sports Physiology and Performance",year:2020,finding:"RPE×训练时长（sRPE）是最实用的内部负荷监控方法，与客观指标高度相关。",advice:"每次训练结束后记录RPE（1-10量表），计算训练负荷=RPE×分钟数，用于监控疲劳和规划减载。"},
+  {title:"Comparative Adaptations to Different Leg Extension Set-Termination Strategies",authors:"Vasconcelos T, et al.",journal:"Journal of Strength and Conditioning Research",year:2026,finding:"训练有素男女在腿屈伸中，1-3 RIR与力竭训练在力量、肌肥大和耐力方面适应性无显著差异；力竭组神经肌肉疲劳更高。",advice:"大多数训练组采用1-3 RIR即可达到同等效果，降低疲劳、加速恢复、维持更高训练频率。力竭可作为补充手段偶尔使用。"}
 ];
 
 const WEEKLY_BOOKS = [
@@ -4272,6 +4283,7 @@ function handleRoute(){
     a.classList.toggle('active',a.dataset.page===hash);
   });
   if(hash==='training')tpInit();
+  if(hash==='dashboard')renderDashboard();
   if(hash==='papers')renderPapers();
   if(hash==='daily-lit')renderDailyLit();
   if(hash==='weekly-book')renderWeeklyBook();
@@ -5623,6 +5635,10 @@ function tpRenderDay(week,dayIdx,day){
   html+='<div class="physio-field"><label>静息心率 (bpm)</label><input type="number" data-physio="rhr" value="'+(pv.rhr||'')+'" placeholder="bpm"></div>';
   html+='<div class="physio-field"><label>睡眠评分 (1-10)</label><input type="number" data-physio="sleep" value="'+(pv.sleep||'')+'" placeholder="1-10" min="1" max="10"></div>';
   html+='<div class="physio-field"><label>主观疲劳</label><input type="range" data-physio="fatigue" min="1" max="10" value="'+(pv.fatigue||5)+'"><span class="slider-val" data-physio-display="fatigue">'+(pv.fatigue||5)+'</span></div>';
+  html+='<div class="physio-field"><label>HRV (ms)</label><input type="number" data-physio="hrv" value="'+(pv.hrv||'')+'" placeholder="ms"></div>';
+  html+='<div class="physio-field"><label>补水量 (ml)</label><input type="number" data-physio="hydration" value="'+(pv.hydration||'')+'" placeholder="ml"></div>';
+  html+='<div class="physio-field"><label>食欲 (1-10)</label><input type="number" data-physio="appetite" value="'+(pv.appetite||'')+'" placeholder="1-10" min="1" max="10"></div>';
+  html+='<div class="physio-field"><label>疼痛 (1-10)</label><input type="range" data-physio="pain" min="1" max="10" value="'+(pv.pain||5)+'"><span class="slider-val" data-physio-display="pain">'+(pv.pain||5)+'</span></div>';
   html+='<div class="physio-field full"><label>备注</label><input type="text" data-physio="note" value="'+(pv.note||'')+'" placeholder="今日状态..."></div>';
   html+='</div></div>';
 
@@ -5749,6 +5765,10 @@ function bindNewTrainingEvents(week,dayIdx){
         var disp=inner.querySelector('[data-physio-display="fatigue"]');
         if(disp)disp.textContent=inp.value;
       }
+      if(inp.dataset.physio==='pain'){
+        var disp=inner.querySelector('[data-physio-display="pain"]');
+        if(disp)disp.textContent=inp.value;
+      }
     });
   });
 }
@@ -5817,6 +5837,216 @@ function formatActivityTime(date){
   if(diff<86400000)return Math.floor(diff/3600000)+'小时前';
   if(diff<604800000)return Math.floor(diff/86400000)+'天前';
   return (date.getMonth()+1)+'/'+date.getDate();
+}
+
+/* ===== DASHBOARD ===== */
+function renderDashboard(){
+  var el=document.getElementById('dashboardContent');
+  if(!el)return;
+  var physioData=acLoadPhysio();
+  var rpeData=acLoadRPE();
+  var logsData=acLoadLogs();
+
+  // Parse all physio entries
+  var physioEntries=[];
+  Object.keys(physioData).forEach(function(key){
+    var parts=key.split('_');
+    if(parts.length>=2){
+      var week=parseInt(parts[0]);
+      var day=parseInt(parts[1]);
+      if(!isNaN(week)&&!isNaN(day)){
+        physioEntries.push({week:week,day:day,data:physioData[key]});
+      }
+    }
+  });
+  physioEntries.sort(function(a,b){return (a.week*10+a.day)-(b.week*10+b.day);});
+
+  // === Section A: Overview stats ===
+  // Calculate stats
+  var completedDays={};
+  var totalTrainDays=0;
+  var totalRpe=0;var rpeCount=0;
+  var weekTrainVolume={};
+
+  // Parse training logs
+  Object.keys(logsData).forEach(function(key){
+    var parts=key.split('_');
+    if(parts.length>=3){
+      var w=parseInt(parts[2]);
+      var d=parseInt(parts[3]);
+      if(!isNaN(w)&&!isNaN(d)){
+        var log=logsData[key];
+        if(log.completed){
+          totalTrainDays++;
+          completedDays[w+'_'+d]=true;
+        }
+        // Calculate volume and RPE
+        if(log.exercises){
+          var weekVol=0;
+          log.exercises.forEach(function(ex){
+            if(ex.sets){
+              ex.sets.forEach(function(s){
+                var w_val=parseFloat(s.weight)||0;
+                var r=parseInt(s.reps)||0;
+                weekVol+=w_val*r;
+              });
+            }
+          });
+          if(!weekTrainVolume[w])weekTrainVolume[w]=0;
+          weekTrainVolume[w]+=weekVol;
+        }
+      }
+    }
+  });
+
+  // Count completed days this week (assume current week = latest week with data)
+  var maxWeek=0;
+  Object.keys(completedDays).forEach(function(k){
+    var w=parseInt(k.split('_')[0]);
+    if(w>maxWeek)maxWeek=w;
+  });
+  var thisWeekCompleted=0;
+  for(var i=1;i<=7;i++){
+    if(completedDays[maxWeek+'_'+i])thisWeekCompleted++;
+  }
+
+  // RPE average
+  Object.keys(rpeData).forEach(function(key){
+    var val=parseFloat(rpeData[key]);
+    if(!isNaN(val)){totalRpe+=val;rpeCount++;}
+  });
+  var avgRpe=rpeCount>0?(totalRpe/rpeCount).toFixed(1):'--';
+
+  // Consecutive training days
+  var consecutive=0;
+  var tempConsec=0;
+  for(var w=1;w<=12;w++){
+    for(var d=1;d<=7;d++){
+      if(completedDays[w+'_'+d]){
+        tempConsec++;
+        if(tempConsec>consecutive)consecutive=tempConsec;
+      }else{
+        tempConsec=0;
+      }
+    }
+  }
+
+  var html='';
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px;">';
+  html+='<div class="physio-card" style="text-align:center;"><div style="font-size:2rem;font-weight:700;color:var(--accent);">'+thisWeekCompleted+'/4</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">本周训练完成</div></div>';
+  html+='<div class="physio-card" style="text-align:center;"><div style="font-size:2rem;font-weight:700;color:var(--accent);">'+totalTrainDays+'</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">总训练天数</div></div>';
+  html+='<div class="physio-card" style="text-align:center;"><div style="font-size:2rem;font-weight:700;color:var(--accent);">'+avgRpe+'</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">平均训练 RPE</div></div>';
+  html+='<div class="physio-card" style="text-align:center;"><div style="font-size:2rem;font-weight:700;color:var(--accent);">'+consecutive+'</div><div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">连续训练天数</div></div>';
+  html+='</div>';
+
+  // === Section B: Health trends (SVG line charts) ===
+  var weightData=[];var hrvData=[];var sleepData=[];
+  physioEntries.forEach(function(e){
+    if(e.data.weight&&parseFloat(e.data.weight))weightData.push({label:'W'+e.week+'D'+e.day,val:parseFloat(e.data.weight)});
+    if(e.data.hrv&&parseFloat(e.data.hrv))hrvData.push({label:'W'+e.week+'D'+e.day,val:parseFloat(e.data.hrv)});
+    if(e.data.sleep&&parseFloat(e.data.sleep))sleepData.push({label:'W'+e.week+'D'+e.day,val:parseFloat(e.data.sleep)});
+  });
+  // Take last 10
+  weightData=weightData.slice(-10);
+  hrvData=hrvData.slice(-10);
+  sleepData=sleepData.slice(-10);
+
+  html+='<div class="physio-card"><div class="physio-card-title">健康趋势</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">';
+  html+=buildLineChart('体重趋势 (kg)',weightData,'#8B1A2D');
+  html+=buildLineChart('HRV 趋势 (ms)',hrvData,'#14b8a6');
+  html+=buildLineChart('睡眠评分趋势',sleepData,'#6366f1');
+  html+='</div></div>';
+
+  // === Section C: Training volume bar chart ===
+  var weekKeys=Object.keys(weekTrainVolume).map(Number).sort(function(a,b){return a-b;});
+  html+='<div class="physio-card"><div class="physio-card-title">每周训练量</div>';
+  if(weekKeys.length===0){
+    html+='<div style="color:var(--text-muted);text-align:center;padding:40px;">暂无训练数据</div>';
+  }else{
+    var maxVol=Math.max.apply(null,weekKeys.map(function(k){return weekTrainVolume[k];}));
+    var barW=100/weekKeys.length;
+    html+='<svg viewBox="0 0 400 200" style="width:100%;height:200px;">';
+    weekKeys.forEach(function(w,i){
+      var vol=weekTrainVolume[w];
+      var barH=maxVol>0?(vol/maxVol)*150:0;
+      var x=i*(400/weekKeys.length)+10;
+      var bw=400/weekKeys.length-20;
+      var y=180-barH;
+      html+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+barH+'" fill="#8B1A2D" rx="4"/>';
+      html+='<text x="'+(x+bw/2)+'" y="195" text-anchor="middle" fill="var(--text-muted)" font-size="10">W'+w+'</text>';
+      html+='<text x="'+(x+bw/2)+'" y="'+(y-5)+'" text-anchor="middle" fill="var(--text-secondary)" font-size="9">'+Math.round(vol)+'</text>';
+    });
+    html+='</svg>';
+  }
+  html+='</div>';
+
+  // === Section D: Training intensity line chart ===
+  var weekRpe={};
+  Object.keys(rpeData).forEach(function(key){
+    var parts=key.split('_');
+    if(parts.length>=2){
+      var w=parseInt(parts[0]);
+      if(!isNaN(w)){
+        if(!weekRpe[w])weekRpe[w]={sum:0,count:0};
+        var v=parseFloat(rpeData[key]);
+        if(!isNaN(v)){weekRpe[w].sum+=v;weekRpe[w].count++;}
+      }
+    }
+  });
+  var rpeWeekKeys=Object.keys(weekRpe).map(Number).sort(function(a,b){return a-b;});
+  html+='<div class="physio-card"><div class="physio-card-title">每周平均训练强度 (RPE)</div>';
+  if(rpeWeekKeys.length===0){
+    html+='<div style="color:var(--text-muted);text-align:center;padding:40px;">暂无 RPE 数据</div>';
+  }else{
+    var rpePoints=rpeWeekKeys.map(function(w){return{label:'W'+w,val:weekRpe[w].sum/weekRpe[w].count};});
+    html+=buildLineChartFull('RPE 趋势',rpePoints,'#f59e0b',400,180);
+  }
+  html+='</div>';
+
+  if(physioEntries.length===0&&totalTrainDays===0){
+    html='<div style="text-align:center;padding:80px 20px;color:var(--text-muted);"><div style="font-size:3rem;margin-bottom:16px;">◉</div><div style="font-size:1.1rem;">暂无数据</div><div style="font-size:0.85rem;margin-top:8px;">开始记录训练和生理数据后，这里将展示你的数据看板</div></div>';
+  }
+
+  el.innerHTML=html;
+}
+
+function buildLineChart(title,data,color){
+  if(data.length===0)return '<div style="color:var(--text-muted);text-align:center;padding:30px;">暂无'+title+'数据</div>';
+  return buildLineChartFull(title,data,color,300,150);
+}
+
+function buildLineChartFull(title,data,color,w,h){
+  if(data.length<1)return '';
+  var padding=30;var chartW=w-padding*2;var chartH=h-padding*2;
+  var vals=data.map(function(d){return d.val;});
+  var minV=Math.min.apply(null,vals);var maxV=Math.max.apply(null,vals);
+  var range=maxV-minV||1;
+  minV-=range*0.1;maxV+=range*0.1;range=maxV-minV;
+
+  var points=[];
+  data.forEach(function(d,i){
+    var x=padding+(i/(Math.max(data.length-1,1)))*chartW;
+    var y=padding+chartH-(((d.val-minV)/range)*chartH);
+    points.push(x+','+y);
+  });
+
+  var svg='<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:'+h+'px;">';
+  // Grid lines
+  svg+='<line x1="'+padding+'" y1="'+padding+'" x2="'+padding+'" y2="'+(padding+chartH)+'" stroke="var(--border)" stroke-width="0.5"/>';
+  svg+='<line x1="'+padding+'" y1="'+(padding+chartH)+'" x2="'+(padding+chartW)+'" y2="'+(padding+chartH)+'" stroke="var(--border)" stroke-width="0.5"/>';
+  // Line
+  svg+='<polyline points="'+points.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round"/>';
+  // Points and labels
+  data.forEach(function(d,i){
+    var x=padding+(i/(Math.max(data.length-1,1)))*chartW;
+    var y=padding+chartH-(((d.val-minV)/range)*chartH);
+    svg+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+color+'"/>';
+    svg+='<text x="'+x+'" y="'+(padding+chartH+15)+'" text-anchor="middle" fill="var(--text-muted)" font-size="8">'+d.label+'</text>';
+    svg+='<text x="'+x+'" y="'+(y-8)+'" text-anchor="middle" fill="var(--text-secondary)" font-size="8">'+d.val+'</text>';
+  });
+  svg+='</svg>';
+  return svg;
 }
 
 /* ===== INIT ===== */
