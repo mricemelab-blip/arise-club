@@ -4588,7 +4588,22 @@ function buildCheckinCalendar(data,now){
 }
 
 /* ===== QUIZ (FLASHCARD) ===== */
-var _quizState={chapters:[],words:[],current:null,answered:false,correct:0,wrong:0,total:0};
+var _quizState={chapters:[],words:[],current:null,answered:false,correct:0,wrong:0,total:0,wrongWords:[],allWords:[],retryMode:false};
+
+function retryWrongWords(){
+  if(_quizState.wrongWords.length===0)return;
+  _quizState.words=[].concat(_quizState.wrongWords);
+  _quizState.wrongWords=[];
+  _quizState.retryMode=true;
+  /* Reset session stats for retry round */
+  _quizState.correct=0;
+  _quizState.wrong=0;
+  _quizState.total=0;
+  _quizState.answered=false;
+  /* Shuffle */
+  for(var i=_quizState.words.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=_quizState.words[i];_quizState.words[i]=_quizState.words[j];_quizState.words[j]=t;}
+  showNextQuizCard();
+}
 
 function renderQuizGroup(){
   if(typeof VOCAB_DATA==='undefined'){
@@ -4720,7 +4735,9 @@ function startQuizRound(){
 
 function showNextQuizCard(){
   if(_quizState.words.length===0){
-    document.getElementById('quizCardArea').innerHTML='<div class="english-panel" style="text-align:center"><h3>本轮练习结束</h3><p style="margin-top:12px;color:var(--text-secondary)">正确: '+_quizState.correct+' / 总题数: '+_quizState.total+' ('+Math.round(_quizState.correct/Math.max(_quizState.total,1)*100)+'%)</p><button class="quiz-next-btn" style="max-width:300px;margin:16px auto 0" onclick="renderQuizGroup()">返回</button></div>';
+    var hasWrong=_quizState.wrongWords.length>0;
+    var retryBtn=hasWrong?'<button class="quiz-next-btn" style="max-width:300px;margin:12px auto 0;background:#c0392b" onclick="retryWrongWords()">重做错题 ('+_quizState.wrongWords.length+'题) →</button>':'';
+    document.getElementById('quizCardArea').innerHTML='<div class="english-panel" style="text-align:center"><h3>'+(_quizState.retryMode?'错题重练结束':'本轮练习结束')+'</h3><p style="margin-top:12px;color:var(--text-secondary)">正确: '+_quizState.correct+' / 总题数: '+_quizState.total+' ('+Math.round(_quizState.correct/Math.max(_quizState.total,1)*100)+'%)</p>'+retryBtn+'<button class="quiz-next-btn" style="max-width:300px;margin:12px auto 0" onclick="renderQuizGroup()">返回</button></div>';
     return;
   }
   var word=_quizState.words.shift();
@@ -4773,6 +4790,8 @@ function handleQuizAnswer(btn){
     _quizState.wrong++;
     stats.wrong++;
     btn.classList.add('selected-wrong');
+    /* Track wrong word for retry */
+    _quizState.wrongWords.push(_quizState.current);
     /* Highlight correct answer */
     var allBtns=document.querySelectorAll('#quizOpts .quiz-opt-btn');
     allBtns.forEach(function(b){
@@ -4792,9 +4811,10 @@ function handleQuizAnswer(btn){
     resEl.className='quiz-result '+(isCorrect?'correct':'wrong');
     resEl.textContent=isCorrect?'✓ 正确':'✗ 正确答案: '+correct;
   }
-  /* Show next button */
-  var nextWrap=document.getElementById('quizNextWrap');
-  if(nextWrap)nextWrap.style.display='block';
+
+  /* Auto-advance: correct→800ms, wrong→1500ms to see correction */
+  var delay=isCorrect?800:1500;
+  setTimeout(function(){showNextQuizCard();},delay);
 }
 
 /* ===== ESSAY (DAILY WRITING) ===== */
