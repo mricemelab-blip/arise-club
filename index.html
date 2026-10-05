@@ -671,6 +671,171 @@ button{cursor:pointer;border:none;background:none}
 .english-panel h3{font-size:1rem;font-weight:700;letter-spacing:0.03em;margin-bottom:16px}
 
 
+/* ========== QUIZ (FLASHCARD) ========== */
+.quiz-layout{max-width:800px;margin:0 auto}
+.quiz-chapters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.quiz-ch-btn{
+  padding:8px 14px;border-radius:8px;font-size:0.75rem;font-weight:600;
+  background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-secondary);
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.03em;
+}
+.quiz-ch-btn:hover{border-color:var(--accent);color:var(--accent)}
+.quiz-ch-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.quiz-start-row{display:flex;gap:12px;align-items:center;margin-bottom:24px;flex-wrap:wrap}
+.quiz-start-btn{
+  padding:10px 28px;border-radius:var(--radius);font-size:0.8rem;font-weight:700;
+  background:var(--accent-gradient);color:#fff;border:none;letter-spacing:0.08em;
+  cursor:pointer;transition:all 0.3s;
+}
+.quiz-start-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.quiz-start-btn:disabled{opacity:0.4;cursor:default;transform:none}
+.quiz-info{font-size:0.75rem;color:var(--text-muted)}
+.quiz-card-wrap{perspective:800px;margin-bottom:24px}
+.quiz-card{
+  position:relative;width:100%;min-height:220px;border-radius:16px;
+  background:var(--bg-surface);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 24px;transition:all 0.4s;text-align:center;
+}
+.quiz-card .quiz-word{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:800;letter-spacing:0.02em;margin-bottom:8px}
+.quiz-card .quiz-phonetic{font-size:0.85rem;color:var(--text-muted);margin-bottom:4px}
+.quiz-card .quiz-pos{font-size:0.75rem;color:var(--accent);font-weight:600;margin-bottom:12px}
+.quiz-card .quiz-result{
+  font-size:1rem;font-weight:700;margin-top:8px;padding:6px 16px;border-radius:8px;
+}
+.quiz-card .quiz-result.correct{color:#27ae60;background:rgba(46,204,113,0.1)}
+.quiz-card .quiz-result.wrong{color:#e74c3c;background:rgba(231,76,60,0.1)}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.quiz-opt-btn{
+  padding:14px 16px;border-radius:12px;font-size:0.82rem;font-weight:500;
+  background:var(--bg-surface);border:1px solid var(--border);color:var(--text-primary);
+  cursor:pointer;transition:all 0.2s;text-align:left;line-height:1.5;
+}
+.quiz-opt-btn:hover{border-color:var(--accent);background:var(--bg-elevated)}
+.quiz-opt-btn.selected-correct{background:rgba(46,204,113,0.12);border-color:#27ae60;color:#1a8a4a}
+.quiz-opt-btn.selected-wrong{background:rgba(231,76,60,0.12);border-color:#e74c3c;color:#c0392b}
+.quiz-opt-btn.show-correct{background:rgba(46,204,113,0.08);border-color:#27ae60}
+.quiz-opt-btn:disabled{cursor:default}
+.quiz-stats{
+  display:flex;gap:24px;padding:16px 0;border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);margin-bottom:24px;
+}
+.quiz-stat{text-align:center;flex:1}
+.quiz-stat .num{font-size:1.4rem;font-weight:800;color:var(--accent)}
+.quiz-stat .label{font-size:0.65rem;color:var(--text-muted);letter-spacing:0.06em;margin-top:2px}
+.quiz-lb-table{width:100%;border-collapse:collapse;font-size:0.78rem}
+.quiz-lb-table th{
+  text-align:left;padding:10px 12px;font-weight:600;font-size:0.68rem;
+  letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);
+  border-bottom:1px solid var(--border);
+}
+.quiz-lb-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.quiz-lb-table tr:last-child td{border-bottom:none}
+.quiz-lb-table .rank-num{font-weight:800;color:var(--accent);width:32px}
+.quiz-next-btn{
+  padding:12px 32px;border-radius:var(--radius);font-size:0.82rem;font-weight:700;
+  background:var(--accent-gradient);color:#fff;border:none;letter-spacing:0.06em;
+  cursor:pointer;transition:all 0.3s;width:100%;margin-top:8px;
+}
+.quiz-next-btn:hover{opacity:0.9}
+
+/* ========== ESSAY (DAILY WRITING) ========== */
+.essay-layout{max-width:900px;margin:0 auto}
+.essay-words-bar{
+  display:flex;flex-wrap:wrap;gap:8px;padding:16px;margin-bottom:20px;
+  background:var(--bg-surface);border-radius:12px;border:1px solid var(--border);
+}
+.essay-word-chip{
+  padding:6px 12px;border-radius:8px;font-size:0.75rem;font-weight:600;
+  background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-secondary);
+  cursor:pointer;transition:all 0.2s;position:relative;
+}
+.essay-word-chip:hover{border-color:var(--accent);color:var(--accent)}
+.essay-word-chip .chip-tip{
+  display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#1a1a2e;color:#fff;padding:6px 10px;border-radius:6px;font-size:0.68rem;
+  white-space:nowrap;z-index:10;font-weight:400;
+}
+.essay-word-chip:hover .chip-tip{display:block}
+.essay-word-chip.used{background:var(--accent);color:#fff;border-color:var(--accent)}
+.essay-date-label{font-size:0.72rem;color:var(--text-muted);margin-bottom:12px;letter-spacing:0.06em}
+.essay-textarea{
+  width:100%;min-height:240px;padding:16px;border-radius:12px;
+  border:1px solid var(--border);background:var(--bg-surface);
+  font-size:0.88rem;line-height:1.8;resize:vertical;color:var(--text-primary);
+  font-family:Georgia,'Times New Roman',serif;outline:none;transition:border-color 0.3s;
+}
+.essay-textarea:focus{border-color:var(--accent)}
+.essay-textarea::placeholder{color:var(--text-muted)}
+.essay-bottom-bar{display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px}
+.essay-word-count{font-size:0.72rem;color:var(--text-muted)}
+.essay-word-count .warn{color:#e74c3c;font-weight:600}
+.essay-submit-btn{
+  padding:12px 32px;border-radius:var(--radius);font-size:0.82rem;font-weight:700;
+  background:var(--accent-gradient);color:#fff;border:none;letter-spacing:0.08em;
+  cursor:pointer;transition:all 0.3s;
+}
+.essay-submit-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.essay-submit-btn:disabled{opacity:0.4;cursor:default;transform:none}
+.essay-result{margin-top:28px}
+.essay-scores{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;
+}
+.essay-score-card{
+  background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+  padding:20px 12px;text-align:center;
+}
+.essay-score-card .score-num{font-size:1.8rem;font-weight:800;color:var(--accent)}
+.essay-score-card .score-label{font-size:0.65rem;color:var(--text-muted);letter-spacing:0.06em;margin-top:4px;text-transform:uppercase}
+.essay-score-card .score-bar{
+  height:4px;border-radius:2px;background:var(--bg-elevated);margin-top:8px;overflow:hidden;
+}
+.essay-score-card .score-fill{height:100%;border-radius:2px;background:var(--accent-gradient);transition:width 0.6s}
+.essay-section-title{
+  font-size:0.82rem;font-weight:700;letter-spacing:0.04em;margin-bottom:12px;
+  padding-bottom:8px;border-bottom:1px solid var(--border);
+}
+.essay-feedback-list{list-style:none;padding:0;margin-bottom:24px}
+.essay-feedback-list li{
+  padding:10px 14px;margin-bottom:8px;border-radius:8px;
+  background:var(--bg-surface);border:1px solid var(--border);
+  font-size:0.8rem;line-height:1.7;
+}
+.essay-feedback-list li .fb-type{
+  font-weight:700;font-size:0.68rem;letter-spacing:0.06em;
+  text-transform:uppercase;margin-right:8px;
+}
+.essay-feedback-list li .fb-type.err{color:#e74c3c}
+.essay-feedback-list li .fb-type.sug{color:#2980b9}
+.essay-feedback-list li .fb-type.good{color:#27ae60}
+.essay-model-essay{
+  background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;
+  padding:20px;margin-bottom:24px;
+}
+.essay-model-essay p{
+  font-family:Georgia,'Times New Roman',serif;font-size:0.85rem;
+  line-height:1.9;color:var(--text-primary);
+}
+.essay-model-essay .target-word{color:var(--accent);font-weight:700}
+.essay-history{margin-top:24px}
+.essay-history-item{
+  padding:12px 16px;margin-bottom:8px;border-radius:8px;
+  background:var(--bg-surface);border:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;
+}
+.essay-history-item .eh-date{font-weight:600;color:var(--text-secondary)}
+.essay-history-item .eh-score{color:var(--accent);font-weight:700}
+@media(max-width:768px){
+  .quiz-opts{grid-template-columns:1fr}
+  .essay-scores{grid-template-columns:repeat(2,1fr)}
+  .essay-word-chip{font-size:0.68rem;padding:5px 9px}
+}
+@media(max-width:480px){
+  .essay-scores{grid-template-columns:1fr 1fr}
+  .quiz-stats{flex-wrap:wrap;gap:12px}
+  .quiz-stat{min-width:calc(50% - 8px)}
+}
+
 /* ========== RESPONSIVE ========== */
 @media(max-width:1024px){
   .book-grid{grid-template-columns:repeat(3,1fr)}
@@ -899,6 +1064,7 @@ button{cursor:pointer;border:none;background:none}
   </div>
 
 </div>
+<script src="vocab_data.js"></script>
 <script>
 
 /* ===== DATA ===== */
@@ -3933,7 +4099,7 @@ const WEEKLY_BOOKS = [
     subtitle: '网飞的自由与责任工作法',
     author: '里德·哈斯廷斯 / 艾琳·迈耶',
     publisher: '中信出版集团',
-    cover: 'https://img2.doubanio.com/view/subject/l/public/s33580465.jpg',
+    cover: 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22300%22%20height%3D%22450%22%20viewBox%3D%220%200%20300%20450%22%3E%0A%20%20%3Crect%20width%3D%22300%22%20height%3D%22450%22%20fill%3D%22%23c8956c%22/%3E%0A%20%20%3Ctext%20x%3D%22150%22%20y%3D%22200%22%20text-anchor%3D%22middle%22%20font-family%3D%22serif%22%20font-size%3D%2236%22%20fill%3D%22white%22%20font-weight%3D%22bold%22%3E%E4%B8%8D%E6%8B%98%E4%B8%80%E6%A0%BC%3C/text%3E%0A%20%20%3Ctext%20x%3D%22150%22%20y%3D%22250%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22rgba%28255%2C255%2C255%2C0.8%29%22%3ENO%20RULES%20MARKET%3C/text%3E%0A%20%20%3Ctext%20x%3D%22150%22%20y%3D%22350%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22rgba%28255%2C255%2C255%2C0.6%29%22%3E%E9%87%8C%E5%BE%B7%C2%B7%E5%93%88%E6%96%AF%E5%BB%B7%E6%96%AF%3C/text%3E%0A%3C/svg%3E',
     color: '#c8956c',
     date: '2026.10',
     tags: ['组织管理', '企业文化', '人才战略'],
@@ -4315,6 +4481,16 @@ function renderInterestGroups(){
   html+='<h3>英语学习小组</h3>';
   html+='<p>每日一句英语打卡，积累运动科学领域的英文表达</p>';
   html+='<div class="group-count">每日打卡 · 持续进行中</div>';
+  html+='</div>';
+  html+='<div class="group-card" onclick="navigate(\'quiz-group\')">';
+  html+='<h3>翻卡选答案</h3>';
+  html+='<p>按章节选择单词，看英文选中文释义，反复练习巩固词汇</p>';
+  html+='<div class="group-count">22章 · 2878词 · 自由练习</div>';
+  html+='</div>';
+  html+='<div class="group-card" onclick="navigate(\'essay-group\')">';
+  html+='<h3>每日作文</h3>';
+  html+='<p>每天20个目标词，写英语作文，AI老师四维点评打分</p>';
+  html+='<div class="group-count">每日挑战 · 写作提升</div>';
   html+='</div>';
   html+='</div>';
   document.getElementById('groupsList').innerHTML=html;
@@ -4869,6 +5045,20 @@ function handleRoute(){
     var target=document.getElementById('page-interest-groups');
     if(target)target.classList.add('active');
     renderEnglishGroup();
+    return;
+  }
+
+  if(hash==='quiz-group'){
+    var target=document.getElementById('page-interest-groups');
+    if(target)target.classList.add('active');
+    renderQuizGroup();
+    return;
+  }
+
+  if(hash==='essay-group'){
+    var target=document.getElementById('page-interest-groups');
+    if(target)target.classList.add('active');
+    renderEssayGroup();
     return;
   }
 
