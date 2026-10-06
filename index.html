@@ -1014,6 +1014,7 @@ button{cursor:pointer;border:none;background:none}
       <div class="daily-card-excerpt" id="dailyExcerpt"></div>
       <div class="daily-card-source" id="dailySource"></div>
     </div>
+        <div id="featuredLitCard" style="display:none"></div>
     <div class="section-label" style="margin-top:28px;margin-bottom:14px">今日任务 · Today's Plan</div>
     <div id="todayTasks"></div>
     <div class="section-label">专栏导航</div>
@@ -4169,7 +4170,27 @@ const LITERATURE_DB = [
     conclusion: "",
     tags: ["训练"]
   }
+,
+  {
+    id:'T-143', title:'恢复手段效果排序：冷水浸泡微幅领先，其余手段与安慰剂无异', titleEn:'Recovery Modalities NMA',
+    authors:'Jin X, Impellizzeri FM, Malm C, et al.', year:'2026', journal:'Sports Medicine',
+    doi:'10.1007/s40279-026-04219-4', grade:'SR/MA', category:'康复', date:'2026-10-06',
+    summary:'47项RCT网络荟萃分析，9种恢复手段仅CWI对主观恢复感有微弱显著改善(SMD=-0.30, d=0.21)，CWC次之(d=0.22)，其余均不显著。',
+    finding:'冷水浸泡(CWI)是唯一对主观恢复感具有统计学显著改善的干预(SMD=-0.30)，冷水加压缩衣(CWC)次之(SMD=-0.24)。效应量极小，远低于MCID阈值。CMJ等客观指标无改善。',
+    background:'运动员频繁采用恢复手段，但相对有效性缺乏系统比较。首次对9种主流恢复方式进行NMA比较。',
+    methods:'网络荟萃分析(NMA)，随机效应模型，SUCRA排序。纳入47项RCT(n=822)，覆盖CWI、CWT、MAS、CG、AR、SB、CWC、CRY、ES。',
+    results:'仅CWI显著改善主观恢复感(d=0.21)，CWC次之(d=0.22)。其余7种均不显著。所有效应量远低于MCID。',
+    limitations:'效应量极小；客观指标无改善；研究异质性大；样本量偏小。',
+    practice:'恢复的本质是生物修复过程。最佳策略：充足睡眠、充足营养(蛋白质2g/kg、足量碳水)、充足时间(48-72h)。冷水浸泡可作辅助但不应高估。',
+    conclusion:'冷水浸泡微幅领先，但所有恢复手段效果量极小。恢复不是产品而是过程——睡眠、吃够、休息是最有效的恢复策略。',
+    tags:['系统综述','荟萃分析','恢复','冷水浸泡','运动恢复'],
+    fullReadUrl:'jin-recovery-modalities-nma-2026.html'
+  }
 ];
+
+const FEATURED_LIT = {
+  '2026-10-07': {title:'恢复手段效果排序：冷水浸泡微幅领先，其余手段与安慰剂无异', authors:'Jin X, et al.', journal:'Sports Medicine', year:'2026', finding:'47项RCT网络荟萃分析：9种恢复手段仅冷水浸泡(CWI)对主观恢复感有微弱显著改善(SMD=-0.30, d=0.21)，效应量远低于MCID。恢复不是产品而是过程——睡眠、吃够、休息才是最优策略。', fullUrl:'jin-recovery-modalities-nma-2026.html'}
+};
 
 const DAILY_LIT_DATA = [
   {title:"肌酸补充可提升力量和功率输出5-15%，是最充分的运动补剂",authors:"Kreider RB, et al.",journal:"Journal of Exercise Nutrition & Biochemistry",year:2017,finding:"肌酸是目前研究最充分的运动补剂，平均可提升力量和功率输出5-15%。",advice:"每日3-5g一水肌酸，无需冲击期，长期服用安全无副作用。"},
@@ -4209,6 +4230,7 @@ const DAILY_LIT_DATA = [
     conclusion: "髋外展肌力不对称>32.5%的男性跑者足底筋膜炎风险增加3.65倍，但证据质量很低（仅12例事件），不宜外推至女性或青少年跑者。",
     tags: ["前瞻性队列研究", "跑步损伤", "髋外展肌", "足底筋膜炎", "双侧不对称"]
   },
+  {title:"冷水浸泡(CWI)是现有恢复手段中唯一具有统计学显著效果的，但实际效果量极小(Cohen's d=0.21-0.42)",authors:"Jin X, et al.",journal:"Sports Medicine",year:2026,finding:"47项RCT的网络荟萃分析显示，在冷热对比浴、按摩、冷水浸泡、压缩衣、主动恢复、蒸汽浴、冷水加压缩衣、冷冻疗法和电刺激等9种恢复方式中，仅冷水浸泡对主观恢复感具有统计学显著改善(SMD=-0.30)，但效应量极小。冷水加压缩衣(CWC)次之。",advice:"恢复不是一种产品，而是一个过程。最佳恢复策略：充足睡眠(第一恢复手段)、充足营养摄入(蛋白质2g/kg、足量碳水、水分和电解质)、充足时间(48-72小时高强度间恢复)。冷水浸泡可作为高强度训练后的辅助手段，但不要指望它产生戏剧性变化。"},
 ];
 
 const WEEKLY_BOOKS = [
@@ -4420,6 +4442,7 @@ function renderHome(){
   document.getElementById('dailyMeta').innerHTML=metaHtml;
   document.getElementById('dailyExcerpt').textContent=ex.excerpt;
   document.getElementById('dailySource').textContent='——《高性价比人生指南》第'+ex.chapter+'章';
+  renderFeaturedLit(now);
   renderTodayTasks(now, dayOfYear);
   renderActivityFeed();
 }
@@ -4587,6 +4610,15 @@ function togglePaperDetail(idx){
 }
 
 /* ===== DAILY LIT ===== */
+function renderFeaturedLit(now){
+  var dateKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  var featured=FEATURED_LIT[dateKey];
+  var el=document.getElementById('featuredLitCard');
+  if(!featured||!el){if(el)el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #333;border-radius:12px;padding:28px 32px;margin-bottom:24px"><div style="font-size:0.65rem;font-weight:700;letter-spacing:0.25em;color:#4ecdc4;margin-bottom:8px;text-transform:uppercase">\u4eca\u65e5\u6587\u732e\u63a8\u9001 \u00b7 Today\'s Paper</div><h3 style="font-size:clamp(18px,2.5vw,24px);font-weight:900;color:#fff;line-height:1.3;margin-bottom:10px">'+featured.title+'</h3><div style="font-size:0.8rem;color:#888;margin-bottom:14px">'+featured.authors+' \u00b7 '+featured.journal+' \u00b7 '+featured.year+'</div><div style="font-size:0.88rem;color:#ccc;line-height:1.7;font-family:Georgia,serif;margin-bottom:18px">'+featured.finding+'</div><a href="'+featured.fullUrl+'" style="display:inline-block;padding:10px 24px;background:#4ecdc4;color:#1a1a2e;font-weight:700;font-size:0.85rem;letter-spacing:0.05em;text-decoration:none;border-radius:6px">\u9605\u8bfb\u5b8c\u6574\u89e3\u8bfb \u2192</a></div>';
+}
+
 function renderDailyLit(){
   var now=new Date();
   var dayOfYear=Math.floor((now-new Date(now.getFullYear(),0,0))/(1000*60*60*24));
