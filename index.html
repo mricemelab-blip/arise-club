@@ -4434,13 +4434,13 @@ function handleRoute(){
   document.querySelectorAll('.sidebar-links a').forEach(function(a){
     a.classList.toggle('active',a.dataset.page===hash);
   });
-  if(hash==='training')tpInit();
-  if(hash==='dashboard')renderDashboard();
-  if(hash==='papers')renderPapers();
-  if(hash==='daily-lit')renderDailyLit();
-  if(hash==='weekly-book')renderWeeklyBook();
-  if(hash==='interest-groups')renderInterestGroups();
-  if(hash==='home')renderHome();
+  if(hash==='training')try{tpInit();}catch(e){console.error('tpInit error:',e);}
+  if(hash==='dashboard')try{renderDashboard();}catch(e){console.error('renderDashboard error:',e);}
+  if(hash==='papers')try{renderPapers();}catch(e){console.error('renderPapers error:',e);}
+  if(hash==='daily-lit')try{renderDailyLit();}catch(e){console.error('renderDailyLit error:',e);}
+  if(hash==='weekly-book')try{renderWeeklyBook();}catch(e){console.error('renderWeeklyBook error:',e);}
+  if(hash==='interest-groups')try{renderInterestGroups();}catch(e){console.error('renderInterestGroups error:',e);}
+  if(hash==='home')try{renderHome();}catch(e){console.error('renderHome error:',e);}
 }
 
 /* ===== HOME ===== */
@@ -6598,8 +6598,8 @@ function buildLineChartFull(title,data,color,w,h){
 
 /* ===== INIT ===== */
 function initApp(){
-  renderHome();
-  handleRoute();
+  try{renderHome();}catch(e){console.error('renderHome error:',e);}
+  try{handleRoute();}catch(e){console.error('handleRoute error:',e);}
   window.addEventListener('hashchange',handleRoute);
   document.getElementById('logoutBtn').addEventListener('click',doLogout);
 }
@@ -6614,6 +6614,30 @@ function toggleSidebar(){
   if(overlay){overlay.classList.toggle('show');}
 }
 </script>
-<script src="vocab_data.js?v=32"></script>
+<script src="vocab_data.js?v=33"></script>
+
+<script>
+(function(){
+  window.addEventListener('error', function(e){
+    console.error('Global error:', e.message, 'at', e.filename, ':', e.lineno);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    console.error('Unhandled rejection:', e.reason);
+  });
+  // Check if pages are visible after a short delay
+  setTimeout(function(){
+    var activePages = document.querySelectorAll('.page.active');
+    var mainContent = document.getElementById('mainContent');
+    console.log('Active pages:', activePages.length);
+    console.log('mainContent display:', mainContent ? mainContent.style.display : 'N/A');
+    activePages.forEach(function(p){
+      var computed = window.getComputedStyle(p);
+      console.log('Page #' + p.id + ' display:', computed.display);
+      console.log('Page #' + p.id + ' innerHTML length:', p.innerHTML.length);
+    });
+  }, 1000);
+})();
+</script>
+
 </body>
 </html>
