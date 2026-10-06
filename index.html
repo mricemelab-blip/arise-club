@@ -1145,6 +1145,21 @@ button{cursor:pointer;border:none;background:none}
         <div id="detailInner"></div>
       </div>
     </div>
+
+    <!-- GitHub PAT 配置（多人训练看板同步用） -->
+    <div class="tr-pat-config" id="tr-patConfig" style="margin-top:32px;padding:20px;background:rgba(139,26,45,0.05);border-radius:12px;border:1px solid var(--border);max-width:500px;margin-left:auto;margin-right:auto;">
+      <div style="font-size:0.9rem;font-weight:600;margin-bottom:8px;">多人训练数据同步配置</div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px;">
+        输入 GitHub Personal Access Token（需 <code>repo</code> 权限）以启用跨设备训练数据同步。
+        <br>留空则仅使用本地存储。
+        <a href="https://github.com/settings/tokens" target="_blank" style="color:#8B1A2D;text-decoration:underline;">前往 GitHub 创建 Token</a>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <input type="password" id="patInput" placeholder="ghp_xxxxxxxxxxxx" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:monospace;">
+        <button onclick="savePAT()" style="padding:8px 16px;background:#8B1A2D;color:#fff;border:none;border-radius:6px;font-size:0.85rem;cursor:pointer;font-weight:600;">保存</button>
+      </div>
+      <div id="patStatus" style="font-size:0.75rem;margin-top:6px;color:var(--text-muted);"></div>
+    </div>
   </div>
 
 
@@ -5898,6 +5913,18 @@ function bindNewTrainingEvents(week,dayIdx){
           var userName=userObj.name||'Rise';
           logCommunityActivity(userName,'完成了 '+dayDef.code+' '+dayDef.name.split('·').pop().trim(),'training');
           logCommunityCompletion('training',userName);
+          /* Shared training backend — append to GitHub JSON */
+          if(typeof SharedTraining!=='undefined'){
+            SharedTraining.appendRecord({
+              userName:userName,
+              week:week,
+              day:dayIdx,
+              dayCode:dayDef.code,
+              dayName:dayDef.name.split('·').pop().trim(),
+              completed:true,
+              timestamp:new Date().toISOString()
+            }).catch(function(){});
+          }
         }
       }
     });
@@ -6468,6 +6495,49 @@ function renderDashboard(){
   }
 
   el.innerHTML=html;
+
+  /* === Shared Training Section === */
+  if(typeof SharedTraining!=='undefined'){
+    var sharedDiv=document.createElement('div');
+    sharedDiv.style.cssText='margin-top:24px;';
+    sharedDiv.innerHTML='<div class="physio-card"><div class="physio-card-title">多人训练看板</div><div id="sharedTraineesList" style="color:var(--text-muted);text-align:center;padding:20px;">加载中…</div></div>';
+    el.appendChild(sharedDiv);
+
+    SharedTraining.getTrainees().then(function(trainees){
+      var listEl=document.getElementById('sharedTraineesList');
+      if(!listEl)return;
+      if(!trainees||trainees.length===0){
+        listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-muted);">暂无学员完成训练</div>';
+        return;
+      }
+      // Get all records to count completions per trainee
+      SharedTraining.getAllRecords().then(function(records){
+        var stats={};
+        (records||[]).forEach(function(r){
+          if(!stats[r.userName])stats[r.userName]={days:0,weeks:{}};
+          stats[r.userName].days++;
+          var wk='W'+r.week;
+          if(!stats[r.userName].weeks[wk])stats[r.userName].weeks[wk]=0;
+          stats[r.userName].weeks[wk]++;
+        });
+        var html='<div style="display:grid;gap:12px;">';
+        trainees.forEach(function(name){
+          var s=stats[name]||{days:0,weeks:{}};
+          var weekInfo=Object.keys(s.weeks).sort().map(function(w){return w+':'+s.weeks[w]+'天';}).join(' · ');
+          html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:rgba(139,26,45,0.08);border-radius:8px;border-left:3px solid #8B1A2D;">';
+          html+='<div><div style="font-weight:600;font-size:0.95rem;">'+name+'</div>';
+          html+='<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">'+weekInfo+'</div></div>';
+          html+='<div style="text-align:right;"><div style="font-size:1.5rem;font-weight:700;color:#8B1A2D;">'+s.days+'</div>';
+          html+='<div style="font-size:0.7rem;color:var(--text-muted);">完成天数</div></div></div>';
+        });
+        html+='</div>';
+        listEl.innerHTML=html;
+      });
+    }).catch(function(){
+      var listEl=document.getElementById('sharedTraineesList');
+      if(listEl)listEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-muted);">共享数据暂不可用</div>';
+    });
+  }
 }
 
 function buildLineChart(title,data,color){
@@ -6524,6 +6594,155 @@ function toggleSidebar(){
   var overlay=document.getElementById('sidebarOverlay');
   if(nav){nav.classList.toggle('open');}
   if(overlay){overlay.classList.toggle('show');}
+}
+/* ============================================================
+   Shared Training Backend — GitHub JSON API
+   Owner: mricemelab-blip | Repo: arise-club | File: training-log.json
+   PAT: 在此填入 GitHub Personal Access Token (repo scope)
+   所有操作均有 try-catch 保护，失败时静默降级到 localStorage
+   ============================================================ */
+var SharedTraining=(function(){
+  var OWNER='mricemelab-blip';
+  var REPO='arise-club';
+  var PATH='training-log.json';
+  var BRANCH='main';
+  var PAT=localStorage.getItem('arise_github_pat')||'';
+  var API='https://api.github.com';
+  var cache=null;
+  var lsKey='ac_shared_training_cache';
+
+  function headers(){
+    var h={'Accept':'application/vnd.github.v3+json'};
+    if(PAT)h['Authorization']='token '+PAT;
+    return h;
+  }
+
+  function url(){return API+'/repos/'+OWNER+'/'+REPO+'/contents/'+PATH+'?ref='+BRANCH;}
+
+  function loadFromLS(){try{return JSON.parse(localStorage.getItem(lsKey)||'{"records":[]}');}catch(e){return{records:[]};}}
+  function saveToLS(d){try{localStorage.setItem(lsKey,JSON.stringify(d));}catch(e){}}
+
+  // 从 GitHub 读取训练日志
+  function fetchRemote(){
+    if(!PAT)return Promise.resolve(null);
+    return fetch(url(),{headers:headers()}).then(function(r){
+      if(!r.ok)return null;
+      return r.json();
+    }).then(function(data){
+      if(!data||!data.content)return null;
+      var json=atob(data.content.replace(/\n/g,''));
+      var parsed=JSON.parse(json);
+      cache=parsed;
+      saveToLS(parsed);
+      return parsed;
+    }).catch(function(){return null;});
+  }
+
+  // 追加一条训练记录到 GitHub
+  function appendRecord(record){
+    if(!PAT){
+      // 无PAT时只存localStorage
+      var ls=loadFromLS();
+      ls.records=ls.records||[];
+      ls.records.push(record);
+      saveToLS(ls);
+      return Promise.resolve(true);
+    }
+    // 有PAT时通过GitHub API写入
+    return fetchRemote().then(function(data){
+      var current=data||loadFromLS();
+      current.records=current.records||[];
+      current.records.push(record);
+      var content=btoa(unescape(encodeURIComponent(JSON.stringify(current,null,2))));
+      // 需要拿到当前文件的SHA才能更新
+      return fetch(url(),{headers:headers()}).then(function(r){return r.json();}).then(function(fileData){
+        var sha=fileData?fileData.sha:'';
+        return fetch(API+'/repos/'+OWNER+'/'+REPO+'/contents/'+PATH,{
+          method:'PUT',
+          headers:headers(),
+          body:JSON.stringify({
+            message:'training log: '+record.userName+' completed W'+record.week+'D'+record.day,
+            content:content,
+            sha:sha,
+            branch:BRANCH
+          })
+        });
+      }).then(function(r){
+        if(r.ok){saveToLS(current);return true;}
+        throw new Error('GitHub API write failed: '+r.status);
+      });
+    }).catch(function(err){
+      console.warn('SharedTraining write failed, fallback to localStorage:',err);
+      var ls=loadFromLS();
+      ls.records=ls.records||[];
+      ls.records.push(record);
+      saveToLS(ls);
+      return false;
+    });
+  }
+
+  // 获取所有记录（优先GitHub，降级localStorage）
+  function getAllRecords(){
+    if(cache)return Promise.resolve(cache.records||[]);
+    var ls=loadFromLS();
+    if(!PAT)return Promise.resolve(ls.records||[]);
+    return fetchRemote().then(function(data){
+      return(data&&data.records)?data.records:(ls.records||[]);
+    });
+  }
+
+  // 查询某周某天谁完成了
+  function getCompletions(week,day){
+    return getAllRecords().then(function(records){
+      return records.filter(function(r){return r.week===week&&r.day===day&&r.completed;});
+    });
+  }
+
+  // 获取所有完成训练的学员列表（去重）
+  function getTrainees(){
+    return getAllRecords().then(function(records){
+      var names={};
+      (records||[]).forEach(function(r){
+        if(r.userName)names[r.userName]=true;
+      });
+      return Object.keys(names);
+    });
+  }
+
+  return{
+    fetchRemote:fetchRemote,
+    appendRecord:appendRecord,
+    getAllRecords:getAllRecords,
+    getCompletions:getCompletions,
+    getTrainees:getTrainees,
+    setPAT:function(token){PAT=token;try{localStorage.setItem('arise_github_pat',token);}catch(e){}},
+    getPAT:function(){return PAT;}
+  };
+})();
+
+function savePAT(){
+  var input=document.getElementById('patInput');
+  var status=document.getElementById('patStatus');
+  if(!input||!status)return;
+  var token=input.value.trim();
+  if(!token){
+    status.style.color='var(--text-muted)';
+    status.textContent='Token 已清空，已切换为本地存储模式';
+    SharedTraining.setPAT('');
+    return;
+  }
+  SharedTraining.setPAT(token);
+  status.style.color='#14b8a6';
+  status.textContent='✓ 已保存，正在验证连接…';
+  SharedTraining.fetchRemote().then(function(data){
+    if(data){
+      status.textContent='✓ 已保存并连接成功，当前共 '+(data.records?data.records.length:0)+' 条训练记录';
+    }else{
+      status.textContent='✓ Token 已保存，但暂时无法拉取远程数据（请检查仓库和权限）';
+    }
+  }).catch(function(){
+    status.textContent='✓ Token 已保存';
+  });
 }
 </script>
 </body>
