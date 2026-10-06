@@ -958,12 +958,12 @@ button{cursor:pointer;border:none;background:none}
     <div class="login-brand">发生 · ARISE</div>
     <div class="login-sub">let it Arise</div>
     <div class="login-name-wrap">
-      <input type="text" id="loginName" placeholder="用户名" autocomplete="off">
+      <input type="text" id="loginName" placeholder="用户名" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div class="login-input-wrap">
-      <input type="text" id="loginCode" placeholder="邀请码" autocomplete="off">
+      <input type="text" id="loginCode" placeholder="邀请码" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="login-btn" id="loginBtn">进 入</button>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">进 入</button>
     <div class="login-error" id="loginError"></div>
     
   </div>
@@ -1159,7 +1159,6 @@ button{cursor:pointer;border:none;background:none}
   </div>
 
 </div>
-<script src="vocab_data.js"></script>
 <script>
 
 /* ===== DATA ===== */
@@ -6589,5 +6588,6 @@ function toggleSidebar(){
   if(overlay){overlay.classList.toggle('show');}
 }
 </script>
+<script src="vocab_data.js"></script>
 </body>
 </html>
