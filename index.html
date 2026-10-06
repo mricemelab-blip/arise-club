@@ -1017,6 +1017,7 @@ button{cursor:pointer;border:none;background:none}
       <div class="daily-card-excerpt" id="dailyExcerpt"></div>
       <div class="daily-card-source" id="dailySource"></div>
     </div>
+        <div id="featuredLitCard" style="display:none"></div>
     <div class="section-label" style="margin-top:28px;margin-bottom:14px">今日任务 · Today's Plan</div>
     <div id="todayTasks"></div>
     <div class="section-label">专栏导航</div>
@@ -4190,6 +4191,10 @@ const LITERATURE_DB = [
   }
 ];
 
+const FEATURED_LIT = {
+  '2026-10-07': {title:'恢复手段效果排序：冷水浸泡微幅领先，其余手段与安慰剂无异', authors:'Jin X, et al.', journal:'Sports Medicine', year:'2026', finding:'47项RCT网络荟萃分析：9种恢复手段仅冷水浸泡(CWI)对主观恢复感有微弱显著改善(SMD=-0.30, d=0.21)，效应量远低于MCID。恢复不是产品而是过程——睡眠、吃够、休息才是最优策略。', fullUrl:'jin-recovery-modalities-nma-2026.html'}
+};
+
 const DAILY_LIT_DATA = [
   {title:"肌酸补充可提升力量和功率输出5-15%，是最充分的运动补剂",authors:"Kreider RB, et al.",journal:"Journal of Exercise Nutrition & Biochemistry",year:2017,finding:"肌酸是目前研究最充分的运动补剂，平均可提升力量和功率输出5-15%。",advice:"每日3-5g一水肌酸，无需冲击期，长期服用安全无副作用。"},
   {title:"运动员蛋白质摄入1.6-2.2g/kg为最优区间，超出无额外收益",authors:"Morton RW, et al.",journal:"British Journal of Sports Medicine",year:2018,finding:"运动员每日蛋白质摄入1.6-2.2g/kg为最优区间，超过2.2g/kg无额外收益。",advice:"分4-5餐摄入蛋白质，每餐0.4-0.55g/kg，训练后窗口期内确保一餐。"},
@@ -4440,6 +4445,7 @@ function renderHome(){
   document.getElementById('dailyMeta').innerHTML=metaHtml;
   document.getElementById('dailyExcerpt').textContent=ex.excerpt;
   document.getElementById('dailySource').textContent='——《高性价比人生指南》第'+ex.chapter+'章';
+  renderFeaturedLit(now);
   renderTodayTasks(now, dayOfYear);
   renderActivityFeed();
 }
@@ -4607,6 +4613,15 @@ function togglePaperDetail(idx){
 }
 
 /* ===== DAILY LIT ===== */
+function renderFeaturedLit(now){
+  var dateKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  var featured=FEATURED_LIT[dateKey];
+  var el=document.getElementById('featuredLitCard');
+  if(!featured||!el){if(el)el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #333;border-radius:12px;padding:28px 32px;margin-bottom:24px"><div style="font-size:0.65rem;font-weight:700;letter-spacing:0.25em;color:#4ecdc4;margin-bottom:8px;text-transform:uppercase">\u4eca\u65e5\u6587\u732e\u63a8\u9001 \u00b7 Today\'s Paper</div><h3 style="font-size:clamp(18px,2.5vw,24px);font-weight:900;color:#fff;line-height:1.3;margin-bottom:10px">'+featured.title+'</h3><div style="font-size:0.8rem;color:#888;margin-bottom:14px">'+featured.authors+' \u00b7 '+featured.journal+' \u00b7 '+featured.year+'</div><div style="font-size:0.88rem;color:#ccc;line-height:1.7;font-family:Georgia,serif;margin-bottom:18px">'+featured.finding+'</div><a href="'+featured.fullUrl+'" style="display:inline-block;padding:10px 24px;background:#4ecdc4;color:#1a1a2e;font-weight:700;font-size:0.85rem;letter-spacing:0.05em;text-decoration:none;border-radius:6px">\u9605\u8bfb\u5b8c\u6574\u89e3\u8bfb \u2192</a></div>';
+}
+
 function renderDailyLit(){
   var now=new Date();
   var dayOfYear=Math.floor((now-new Date(now.getFullYear(),0,0))/(1000*60*60*24));
