@@ -959,7 +959,7 @@ button{cursor:pointer;border:none;background:none}
 <!-- LOGIN PAGE -->
 <div class="login-page" id="loginPage">
   <div class="login-visual">
-    <img class="login-visual-img" src="lion.jpg?v=44" alt="">
+    <img class="login-visual-img" src="lion.jpg?v=45" alt="">
   </div>
   <div class="login-form">
     <div class="login-form-inner">
@@ -4376,13 +4376,13 @@ function handleRoute(){
   document.querySelectorAll('.sidebar-links a').forEach(function(a){
     a.classList.toggle('active',a.dataset.page===hash);
   });
-  if(hash==='trainingtpInit();'){try{tpInit();}catch(e){console.error('tpInit error:',e);}}
-  if(hash==='dashboardrenderDashboard();'){try{renderDashboard();}catch(e){console.error('renderDashboard error:',e);}}
-  if(hash==='papersrenderPapers();'){try{renderPapers();}catch(e){console.error('renderPapers error:',e);}}
-  if(hash==='daily-litrenderDailyLit();'){try{renderDailyLit();}catch(e){console.error('renderDailyLit error:',e);}}
-  if(hash==='weekly-bookrenderWeeklyBook();'){try{renderWeeklyBook();}catch(e){console.error('renderWeeklyBook error:',e);}}
-  if(hash==='interest-groupsrenderInterestGroups();'){try{renderInterestGroups();}catch(e){console.error('renderInterestGroups error:',e);}}
-  if(hash==='homerenderHome();'){try{renderHome();}catch(e){console.error('renderHome error:',e);}}
+  if(hash==='training'){try{tpInit();}catch(e){console.error('tpInit error:',e);}}
+  if(hash==='dashboard'){try{renderDashboard();}catch(e){console.error('renderDashboard error:',e);}}
+  if(hash==='papers'){try{renderPapers();}catch(e){console.error('renderPapers error:',e);}}
+  if(hash==='daily-lit'){try{renderDailyLit();}catch(e){console.error('renderDailyLit error:',e);}}
+  if(hash==='weekly-book'){try{renderWeeklyBook();}catch(e){console.error('renderWeeklyBook error:',e);}}
+  if(hash==='interest-groups'){try{renderInterestGroups();}catch(e){console.error('renderInterestGroups error:',e);}}
+  if(hash==='home'){try{renderHome();}catch(e){console.error('renderHome error:',e);}}
 }
 
 /* ===== HOME ===== */
