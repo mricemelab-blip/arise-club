@@ -68,16 +68,13 @@ button{cursor:pointer;border:none;background:none}
 }
 .login-visual::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,#0a0a0f 0%,rgba(10,10,15,0.3) 40%,transparent 65%);
+  background:linear-gradient(90deg,transparent 30%,#0a0a0f 90%,#0a0a0f 100%);
 }
-
-/* Right: Login form */
 .login-form{
   flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
   padding:48px 40px;position:relative;
-  background:rgba(10,10,15,0.6);
-  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  background:#0a0a0f;
 }
 .login-form-inner{width:100%;max-width:360px}
 
@@ -961,7 +958,7 @@ button{cursor:pointer;border:none;background:none}
 <!-- LOGIN PAGE -->
 <div class="login-page" id="loginPage">
   <div class="login-visual">
-    <img class="login-visual-img" src="lion.jpg?v=42" alt="">
+    <img class="login-visual-img" src="lion.jpg?v=43" alt="">
   </div>
   <div class="login-form">
     <div class="login-form-inner">
@@ -975,7 +972,7 @@ button{cursor:pointer;border:none;background:none}
       </div>
       <button class="login-btn" id="loginBtn">进 入</button>
       <div class="login-error" id="loginError"></div>
-      <div class="login-tagline">循证训练 · 深度阅读 · 持续成长</div>
+
     </div>
   </div>
 </div>
