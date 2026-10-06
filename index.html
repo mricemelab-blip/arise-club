@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>发生 · ARISE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1100,7 +1103,7 @@ button{cursor:pointer;border:none;background:none}
   </div>
 
 </div>
-<script src="vocab_data.js"></script>
+<script src="vocab_data.js?v=36"></script>
 <script>
 
 /* ===== DATA ===== */
@@ -4251,7 +4254,8 @@ function showApp(){
   setTimeout(function(){document.getElementById('loginPage').style.display='none'},600);
   document.getElementById('navBar').style.display='flex';
   document.getElementById('mainContent').style.display='block';
-  initApp();
+  if(typeof initApp==='function'){initApp();}
+  else{var _t=setInterval(function(){if(typeof initApp==='function'){clearInterval(_t);initApp();}},200);}
 }
 function doLogout(){localStorage.removeItem('ac_user');location.reload();}
 
@@ -4308,13 +4312,13 @@ function handleRoute(){
   document.querySelectorAll('.sidebar-links a').forEach(function(a){
     a.classList.toggle('active',a.dataset.page===hash);
   });
-  if(hash==='training')tpInit();
-  if(hash==='dashboard')renderDashboard();
-  if(hash==='papers')renderPapers();
-  if(hash==='daily-lit')renderDailyLit();
-  if(hash==='weekly-book')renderWeeklyBook();
-  if(hash==='interest-groups')renderInterestGroups();
-  if(hash==='home')renderHome();
+  if(hash==='trainingtpInit();'){try{tpInit();}catch(e){console.error('tpInit error:',e);}}
+  if(hash==='dashboardrenderDashboard();'){try{renderDashboard();}catch(e){console.error('renderDashboard error:',e);}}
+  if(hash==='papersrenderPapers();'){try{renderPapers();}catch(e){console.error('renderPapers error:',e);}}
+  if(hash==='daily-litrenderDailyLit();'){try{renderDailyLit();}catch(e){console.error('renderDailyLit error:',e);}}
+  if(hash==='weekly-bookrenderWeeklyBook();'){try{renderWeeklyBook();}catch(e){console.error('renderWeeklyBook error:',e);}}
+  if(hash==='interest-groupsrenderInterestGroups();'){try{renderInterestGroups();}catch(e){console.error('renderInterestGroups error:',e);}}
+  if(hash==='homerenderHome();'){try{renderHome();}catch(e){console.error('renderHome error:',e);}}
 }
 
 /* ===== HOME ===== */
@@ -6442,8 +6446,8 @@ function buildLineChartFull(title,data,color,w,h){
 
 /* ===== INIT ===== */
 function initApp(){
-  renderHome();
-  handleRoute();
+  try{renderHome();}catch(e){console.error('renderHome error:',e);}
+  try{handleRoute();}catch(e){console.error('handleRoute error:',e);}
   window.addEventListener('hashchange',handleRoute);
   document.getElementById('logoutBtn').addEventListener('click',doLogout);
 }
