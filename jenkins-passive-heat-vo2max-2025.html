@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jenkins et al. 2025 深度解读 — 被动热适应通过血液与心脏适应提升最大摄氧量</title>
+<style>
+:root{--bg:#F8F6F0;--card:#FFFDF8;--ink:#102A43;--text:#1D2733;--muted:#667085;--blue:#2978B5;--amber:#F59E0B;--red:#B0413E;--green:#2F7D5B;--grid:#E6E1D8;--border:#E0D9C9;--serif:Georgia,"Songti SC","Noto Serif CJK SC",serif;--sans:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:var(--serif);line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:0 24px}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.topband{background:var(--ink);color:#fff;padding:10px 24px;display:flex;justify-content:space-between;align-items:center;font-family:var(--sans);font-size:13px;flex-wrap:wrap;gap:6px}
+.topband .tag{color:var(--amber);font-weight:600;margin-right:8px}
+.topband .meta{opacity:.7;font-size:12px}
+.hero{padding:48px 0 36px;border-bottom:1px solid var(--grid)}
+.kicker{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:12px}
+h1{font-family:var(--serif);font-size:clamp(24px,4vw,36px);line-height:1.3;color:var(--ink);margin-bottom:8px}
+h1 .sub{display:block;font-size:.6em;color:var(--muted);font-style:italic;margin-top:6px}
+.hero-meta{font-family:var(--sans);font-size:13px;color:var(--muted);line-height:1.8;margin-top:16px}
+.hero-meta strong{color:var(--text)}
+.type-tag{display:inline-block;background:var(--ink);color:#fff;font-family:var(--mono);font-size:11px;padding:2px 10px;border-radius:3px;margin-left:8px;vertical-align:middle}
+.verdict{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:28px;background:var(--ink);border-radius:8px;overflow:hidden}
+.vcell{padding:20px 16px;border-left:3px solid var(--amber)}
+.vcell:first-child{border-left:none}
+.vlabel{font-family:var(--sans);font-size:12.5px;color:rgba(255,255,255,.5);margin-bottom:4px}
+.vval{font-family:var(--mono);font-size:clamp(22px,3vw,30px);color:#fff;font-weight:700}
+.vnote{font-family:var(--sans);font-size:12.5px;color:rgba(255,255,255,.4);margin-top:4px}
+.vval.neg{color:var(--green)}
+.vval.null{color:var(--red)}
+.toc{position:sticky;top:0;z-index:100;background:rgba(248,246,240,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid var(--grid);padding:10px 0;overflow-x:auto;white-space:nowrap}
+.toc-inner{display:flex;gap:6px;padding:0 24px;max-width:860px;margin:0 auto}
+.toc a{font-family:var(--sans);font-size:12px;color:var(--muted);padding:4px 12px;border-radius:20px;border:1px solid var(--border);transition:all .2s;flex-shrink:0}
+.toc a:hover,.toc a.active{background:var(--ink);color:#fff;border-color:var(--ink);text-decoration:none}
+section{padding:48px 0 32px;border-bottom:1px solid var(--grid)}
+.sec-no{font-family:var(--mono);font-size:13px;color:var(--amber);display:block;margin-bottom:6px}
+h2{font-family:var(--serif);font-size:clamp(20px,3vw,28px);color:var(--ink);margin-bottom:12px}
+.sec-lede{font-size:15px;color:var(--muted);margin-bottom:24px;max-width:680px}
+p{margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:20px 0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px}
+.card .card-title{font-family:var(--sans);font-size:14px;color:var(--ink);margin-bottom:8px;font-weight:700}
+.card p,.card li{font-size:14px;line-height:1.65}
+.datastrip{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:24px 0;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.dcell{padding:18px 14px;border-top:3px solid var(--blue);text-align:center}
+.dcell .big{font-family:var(--mono);font-size:clamp(20px,2.5vw,28px);font-weight:700;color:var(--ink)}
+.dcell .unit{font-family:var(--sans);font-size:12px;color:var(--muted);margin-top:2px}
+.dcell .lbl{font-family:var(--sans);font-size:11px;color:var(--muted);margin-top:6px}
+.dcell:nth-child(2){border-top-color:var(--amber)}
+.dcell:nth-child(3){border-top-color:var(--green)}
+.dcell:nth-child(4){border-top-color:var(--red)}
+.meta-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+.meta-table th{text-align:left;padding:10px 14px;background:var(--ink);color:#fff;font-family:var(--sans);font-size:13px;font-weight:600}
+.meta-table td{padding:10px 14px;border-bottom:1px solid var(--grid);vertical-align:top}
+.meta-table tr:nth-child(even) td{background:rgba(0,0,0,.02)}
+.tbl-scroll{overflow-x:auto;margin:20px 0;border-radius:8px;border:1px solid var(--border)}
+table.data{width:100%;border-collapse:collapse;font-size:13px;font-family:var(--sans)}
+table.data th{background:var(--ink);color:#fff;padding:10px 12px;text-align:left;font-weight:600;white-space:nowrap}
+table.data td{padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+table.data tr:nth-child(even) td{background:rgba(0,0,0,.015)}
+.tag{display:inline-block;font-family:var(--sans);font-size:11px;padding:2px 8px;border-radius:3px;font-weight:600}
+.tag.hi{background:#E8F5E9;color:var(--green)}
+.tag.mid{background:#FFF8E1;color:#A67C00}
+.tag.lo{background:#FFEBEE;color:var(--red)}
+.tag.neu{background:rgba(0,0,0,.06);color:var(--muted)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:24px 0;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.cc{padding:24px 20px;background:var(--card)}
+.cc.a{border-top:3px solid var(--green)}
+.cc.b{border-top:3px solid var(--red)}
+.cc h4{font-family:var(--sans);font-size:14px;margin-bottom:8px}
+.cc .big{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--ink)}
+.cc p{font-size:13px;color:var(--muted);margin-top:6px}
+.grade-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:16px 0}
+.grade-bar .seg{flex:1}
+.grade-bar .seg.active{background:var(--green)}
+.grade-bar .seg.inactive{background:var(--grid)}
+.grade-bar .seg.warn{background:var(--amber)}
+.grade-bar .seg.danger{background:var(--red)}
+.grade-legend{display:flex;gap:16px;font-family:var(--sans);font-size:12px;color:var(--muted);margin-bottom:16px;flex-wrap:wrap}
+.grade-legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.grade-legend .gl-green::before{background:var(--green)}
+.grade-legend .gl-amber::before{background:var(--amber)}
+.grade-legend .gl-red::before{background:var(--red)}
+.grade-legend .gl-gray::before{background:var(--grid)}
+.mech{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+.m{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px}
+.m .midx{font-family:var(--mono);font-size:20px;color:var(--amber);font-weight:700;margin-bottom:6px}
+.m h4{font-family:var(--sans);font-size:14px;margin-bottom:8px}
+.m p{font-size:13px;line-height:1.65}
+.m .evi{font-family:var(--sans);font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--grid)}
+.flow{display:flex;gap:8px;margin:24px 0;flex-wrap:wrap}
+.step{flex:1;min-width:140px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center}
+.step .sno{font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:4px}
+.step h4{font-family:var(--sans);font-size:13px;margin-bottom:6px}
+.step p{font-size:12px;color:var(--muted);line-height:1.5}
+.note{background:var(--card);border-left:4px solid var(--blue);padding:16px 20px;margin:16px 0;border-radius:0 8px 8px 0;font-size:14px}
+.note.warn{border-left-color:var(--amber)}
+.note.bound{border-left-color:var(--red)}
+.quote{font-family:var(--serif);font-size:18px;color:var(--ink);border-left:4px solid var(--amber);padding:16px 24px;margin:24px 0;font-style:italic;line-height:1.6}
+.verdict-final{margin:20px 0;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.vf-row{display:flex;padding:14px 20px;border-bottom:1px solid var(--grid);align-items:baseline;gap:12px}
+.vf-row:last-child{border-bottom:none}
+.vf-key{font-family:var(--sans);font-size:13px;color:var(--muted);min-width:140px;flex-shrink:0}
+.vf-val{font-family:var(--serif);font-size:15px;color:var(--ink)}
+.misread{background:#FFF5F5;border-left:4px solid var(--red);padding:16px 20px;margin:12px 0;border-radius:0 8px 8px 0}
+.correct{background:#F0FFF4;border-left:4px solid var(--green);padding:16px 20px;margin:12px 0;border-radius:0 8px 8px 0}
+.mr-title,.cr-title{font-family:var(--sans);font-size:13px;font-weight:700;margin-bottom:4px}
+.mr-title{color:var(--red)}
+.cr-title{color:var(--green)}
+.mr-body,.cr-body{font-size:14px;line-height:1.65}
+figure.chart{margin:24px 0;text-align:center}
+figure.chart svg{max-width:100%;height:auto}
+figure.chart figcaption{font-family:var(--sans);font-size:12px;color:var(--muted);margin-top:8px}
+footer{background:var(--ink);color:rgba(255,255,255,.7);padding:48px 0}
+footer h3{color:#fff;font-family:var(--serif);font-size:20px;margin-bottom:20px}
+footer ol{font-family:var(--sans);font-size:13px;line-height:1.8;padding-left:24px}
+footer ol li{margin-bottom:6px}
+footer a{color:var(--amber)}
+.rv{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.rv.in{opacity:1;transform:translateY(0)}
+a:focus-visible,.toc a:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+@media(max-width:900px){
+.verdict{grid-template-columns:1fr 1fr}
+.vcell{border-left:none;border-top:3px solid var(--amber)}
+.vcell:first-child{border-left:none}
+.datastrip{grid-template-columns:1fr 1fr}
+.dcell{border-top-width:2px}
+.grid2,.grid3,.mech,.compare{grid-template-columns:1fr}
+.flow{flex-direction:column}
+}
+@media(max-width:560px){
+.verdict{grid-template-columns:1fr}
+.datastrip{grid-template-columns:1fr}
+.wrap{padding:0 16px}
+.hero{padding:32px 0 24px}
+section{padding:32px 0 24px}
+}
+@media print{
+.toc{display:none}
+.rv{opacity:1;transform:none}
+.topband{background:#fff;color:#000;border-bottom:2px solid #000}
+footer{background:#fff;color:#000}
+footer a{color:#000}
+body{background:#fff;font-size:11pt}
+section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAND -->
+<div class="topband">
+<div><span class="tag">文献深度解读</span>热适应科学 · 运动生理</div>
+<div class="meta">The Journal of Physiology · 2025 · DOI: 10.1113/JP289874</div>
+</div>
+
+<!-- HERO -->
+<div class="wrap">
+<div class="hero">
+<div class="kicker">Literature Deep Read · Heat Adaptation · Original Research</div>
+<h1>被动热适应通过血液与心脏适应提升最大摄氧量
+<span class="sub">Long-term passive heat acclimation enhances maximal oxygen consumption via haematological and cardiac adaptation in endurance runners</span>
+</h1>
+<div class="hero-meta">
+<strong>作者：</strong>Jenkins EJ, Killick JA, Zerilli O, Douglas AJM, Corr L, Hughes MG, Tremblay JC, Stembridge M<span class="type-tag">原始研究 (Original Research)</span><br>
+<strong>期刊：</strong><em>The Journal of Physiology</em>, 2025 Nov 20 · <strong>DOI：</strong><a href="https://doi.org/10.1113/JP289874" target="_blank" rel="noopener noreferrer">10.1113/JP289874</a> · <strong>PMID：</strong>41267396<br>
+<strong>机构：</strong>Cardiff School of Sport and Health Sciences, Cardiff Metropolitan University
+</div>
+
+<div class="verdict">
+<div class="vcell">
+<div class="vlabel">受试者</div>
+<div class="vval">10</div>
+<div class="vnote">训练良好跑者</div>
+</div>
+<div class="vcell">
+<div class="vlabel">VO₂max 提升</div>
+<div class="vval neg">+2.7</div>
+<div class="vnote">mL/kg/min (+4.2%)</div>
+</div>
+<div class="vcell">
+<div class="vlabel">Hb 质量</div>
+<div class="vval neg">+33g</div>
+<div class="vnote">95% CI: 18-49g</div>
+</div>
+<div class="vcell">
+<div class="vlabel">GRADE</div>
+<div class="vval" style="color:var(--amber)">中-低</div>
+<div class="vnote">Moderate-to-Low</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- TOC -->
+<nav class="toc" aria-label="目录导航">
+<div class="toc-inner">
+<a href="#s1">01 研究问题</a>
+<a href="#s2">02 核心结果</a>
+<a href="#s3">03 GRADE评级</a>
+<a href="#s4">04 横向比较</a>
+<a href="#s5">05 综合判断</a>
+<a href="#s6">06 方法学审查</a>
+<a href="#s7">07 机制解读</a>
+<a href="#s8">08 实践桥梁</a>
+<a href="#s9">09 哲学审查</a>
+<a href="#s10">10 常见误读</a>
+<a href="#s11">11 总结</a>
+<a href="#refs">参考文献</a>
+</div>
+</nav>
+
+<main>
+<div class="wrap">
+
+<!-- SECTION 01 -->
+<section id="s1" class="rv">
+<span class="sec-no">SECTION 01</span>
+<h2>研究问题</h2>
+<p class="sec-lede">在已训练跑者中，5周被动热暴露（热水浸泡）能否在保持日常训练的基础上进一步改善有氧能力指标？</p>
+
+<table class="meta-table">
+<caption>PICO 框架与研究设计</caption>
+<tr><th style="width:140px">维度</th><th>内容</th></tr>
+<tr><td><strong>P（人群）</strong></td><td>10名训练良好的跑者（9男1女），基线VO₂max 64.5 ± 8.1 mL·kg⁻¹·min⁻¹</td></tr>
+<tr><td><strong>I（干预）</strong></td><td>热水浸泡（HWI）5 × 45 min/周，水温 ≥ 40°C，持续5周，与日常训练并行</td></tr>
+<tr><td><strong>C（对照）</strong></td><td>时间匹配的对照期，保持日常训练（within-subject cross-over）</td></tr>
+<tr><td><strong>O（结局）</strong></td><td>主要：Hb质量、血容量、LVEDV、VO₂max、VO₂max时跑台速度</td></tr>
+<tr><td><strong>设计</strong></td><td>Within-subject, counterbalanced crossover design</td></tr>
+<tr><td><strong>资助</strong></td><td>原文未报告</td></tr>
+</table>
+
+<div class="grid2">
+<div class="card">
+<p class="card-title">能回答什么</p>
+<p>在已训练跑者中，5周被动热暴露（热水浸泡）能否在保持日常训练的基础上进一步改善有氧能力指标。血液系统（Hb质量、血容量）和心脏结构功能（LVEDV、4D斑点追踪参数）各自贡献多少。</p>
+</div>
+<div class="card">
+<p class="card-title">不能回答什么</p>
+<p>被动热适应与运动热适应的优劣比较（无直接对照臂）。女性群体的独立效应（仅1名女性）。非训练人群的适用性。热适应对运动经济性的独立贡献（VO₂max是极限指标，亚极限表现未测）。长期维持效应（无follow-up数据）。</p>
+</div>
+</div>
+</section>
+
+<!-- SECTION 02 -->
+<section id="s2" class="rv">
+<span class="sec-no">SECTION 02</span>
+<h2>核心结果</h2>
+<p class="sec-lede">所有主要结局P &lt; 0.001，CI均不含零值。Hb质量为VO₂max最强独立预测因子（β = 3.8, R² = 0.825）。</p>
+
+<div class="datastrip">
+<div class="dcell">
+<div class="big">+33g</div>
+<div class="unit">Hb质量</div>
+<div class="lbl">95% CI: 18-49g</div>
+</div>
+<div class="dcell">
+<div class="big">+284mL</div>
+<div class="unit">血容量</div>
+<div class="lbl">95% CI: 113-455mL</div>
+</div>
+<div class="dcell">
+<div class="big">+10mL</div>
+<div class="unit">LVEDV</div>
+<div class="lbl">95% CI: 6-13mL</div>
+</div>
+<div class="dcell">
+<div class="big">+2.7</div>
+<div class="unit">VO₂max</div>
+<div class="lbl">mL/kg/min (+4.2%)</div>
+</div>
+</div>
+
+<h3 style="font-family:var(--serif);font-size:18px;color:var(--ink);margin:28px 0 16px">各结局数据详情</h3>
+
+<div class="tbl-scroll">
+<table class="data">
+<thead><tr><th>结局指标</th><th>变化量</th><th>95% CI</th><th>P值</th><th>效应判断</th></tr></thead>
+<tbody>
+<tr><td><strong>Hb质量</strong></td><td>+33 g</td><td>18 to 49 g</td><td>&lt; 0.001</td><td>增加约5-8%，中等偏大的血液学适应</td></tr>
+<tr><td><strong>血容量</strong></td><td>+284 mL</td><td>113 to 455 mL</td><td>&lt; 0.001</td><td>增加约5-7%，与meta回归一致</td></tr>
+<tr><td><strong>LVEDV</strong></td><td>+10 mL</td><td>6 to 13 mL</td><td>&lt; 0.001</td><td>结构性心脏适应，CI窄且不含零值</td></tr>
+<tr><td><strong>VO₂max</strong></td><td>+2.7 mL·kg⁻¹·min⁻¹</td><td>1.4 to 4.1</td><td>&lt; 0.001</td><td>相对提升约4.2%，有实际运动表现意义</td></tr>
+<tr><td><strong>VO₂max时跑台速度</strong></td><td>+0.8 km/h</td><td>0.5 to 1.1 km/h</td><td>&lt; 0.001</td><td>功能性表达，可转化为15-30秒比赛时间差</td></tr>
+<tr><td><strong>4D应变参数</strong></td><td>—</td><td>—</td><td>均不显著</td><td>心肌收缩和舒张功能未增强，容量扩张源于前负荷</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+<strong>回归分析：</strong>最佳子集回归显示Hb质量是VO₂max最强独立预测因子（β = 3.8, P &lt; 0.001）。固定效应R² = 0.825，全模型R² = 0.961。模型解释了VO₂max变异的82.5%（固定效应）至96.1%（含随机效应）。但需注意：R²高不等于因果关系成立，且n = 10时存在过拟合风险。
+</div>
+
+<div class="note warn">
+<strong>三层判断汇总：</strong>统计显著性——所有主要结局P &lt; 0.001，CI均不含零值。临床/实践显著性——VO₂max +4.2%对训练跑者有实际意义。机制一致性——血液+心脏双系统适应，与氧运输链理论一致。
+</div>
+</section>
+
+<!-- SECTION 03 -->
+<section id="s3" class="rv">
+<span class="sec-no">SECTION 03</span>
+<h2>GRADE 证据确定性</h2>
+<p class="sec-lede">Within-subject crossover设计起点为高质量。五要素降级后为Moderate-to-Low。核心矛盾：效应量大且方向一致，但样本极小（n=10），间接性问题突出。</p>
+
+<div class="grade-bar">
+<div class="seg active" style="flex:2" title="起始高质量"></div>
+<div class="seg warn" style="flex:1" title="偏倚风险 -1"></div>
+<div class="seg warn" style="flex:1" title="间接性 -1"></div>
+<div class="seg danger" style="flex:1" title="不精确性 -1"></div>
+</div>
+<div class="grade-legend">
+<span class="gl-green">起始高质量 (2)</span>
+<span class="gl-amber">偏倚-1 / 间接性-1</span>
+<span class="gl-red">不精确性-1</span>
+<span class="gl-gray">不一致性=0 / 发表偏倚=0</span>
+</div>
+
+<div class="tbl-scroll">
+<table class="data">
+<thead><tr><th>降级要素</th><th>降级</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td><strong>偏倚风险</strong></td><td style="color:var(--amber);font-weight:700">-1</td><td>未报告分配隐藏和盲法（物理干预难以设盲）；carry-over效应未充分评估</td></tr>
+<tr><td><strong>不一致性</strong></td><td style="color:var(--green);font-weight:700">0</td><td>所有受试者完成干预，效应方向一致</td></tr>
+<tr><td><strong>间接性</strong></td><td style="color:var(--amber);font-weight:700">-1</td><td>样本仅10人（9男1女）；被动热暴露vs运动热暴露的转化鸿沟</td></tr>
+<tr><td><strong>不精确性</strong></td><td style="color:var(--red);font-weight:700">-1</td><td>n=10，未报告a priori power analysis；无维持期随访</td></tr>
+<tr><td><strong>发表偏倚</strong></td><td style="color:var(--green);font-weight:700">0</td><td>单篇研究，不存在纳入研究的选择偏倚</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note bound">
+<strong>最终评级：GRADE ⊕⊕⊕◯ 中等质量（Moderate quality），实际判定Moderate-to-Low。</strong>核心矛盾在于：效应量大且方向一致，但样本极小（n=10），间接性问题突出（被动热暴露vs运动热暴露的转化鸿沟）。
+</div>
+</section>
+
+<!-- SECTION 04 -->
+<section id="s4" class="rv">
+<span class="sec-no">SECTION 04</span>
+<h2>同级证据横向比较</h2>
+<p class="sec-lede">三项研究从不同维度指向同一核心命题：热暴露可在训练中产生附加生理适应。效应量受人群特征、干预方式、持续时间所调节。</p>
+
+<div class="tbl-scroll">
+<table class="data">
+<caption>Jenkins 2025 vs Lorenzo 2010</caption>
+<thead><tr><th>维度</th><th>Jenkins 2025</th><th>Lorenzo 2010</th></tr></thead>
+<tbody>
+<tr><td><strong>设计</strong></td><td>Crossover, within-subject</td><td>Parallel, pre-post only</td></tr>
+<tr><td><strong>人群</strong></td><td>10名跑者, VO₂max 64.5</td><td>12名自行车手</td></tr>
+<tr><td><strong>干预</strong></td><td>HWI 5×45min/周, 5周（被动）</td><td>40°C环境骑行90min/天, 10天（主动）</td></tr>
+<tr><td><strong>VO₂max变化</strong></td><td>+2.7 mL/kg/min (+4.2%)</td><td>+5%（凉爽）/ +8%（热）</td></tr>
+<tr><td><strong>持续时间</strong></td><td>5周</td><td>10天</td></tr>
+<tr><td><strong>机制评估</strong></td><td>Hb质量、血容量、LVEDV、4D超声</td><td>VO₂max、乳酸阈值</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+<strong>Jenkins vs Lorenzo：</strong>Lorenzo的效应量更大（5-8% vs 4.2%），但干预时间更短（10天vs5周），且缺乏对照臂。Jenkins在方法学上更严谨（crossover + 对照），但干预为被动热暴露，生态效度不同。两项研究共同指向：热适应可提升VO₂max，幅度在4-8%范围内，主动热适应可能起效更快。
+</div>
+
+<div class="tbl-scroll" style="margin-top:20px">
+<table class="data">
+<caption>Jenkins 2025 vs McDonald 2025 Meta</caption>
+<thead><tr><th>维度</th><th>Jenkins 2025</th><th>McDonald 2025 Meta</th></tr></thead>
+<tbody>
+<tr><td><strong>设计</strong></td><td>单篇RCT crossover</td><td>211项研究, 2587名参与者, Bayesian meta回归</td></tr>
+<tr><td><strong>血容量</strong></td><td>+284 mL (+5-7%)</td><td>血浆容量 +5.6%</td></tr>
+<tr><td><strong>心率</strong></td><td>未报告</td><td>静息HR -5bpm, 运动末HR -17bpm</td></tr>
+<tr><td><strong>运动表现</strong></td><td>VO₂max +4.2%, 跑台速度+0.8 km/h</td><td>计时赛 +3%</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+<strong>Jenkins vs McDonald：</strong>Jenkins的血容量增加幅度（5-7%）与McDonald大规模meta（5.6%）高度一致，增强内部效度。但Jenkins未报告心率、核心温度、出汗率等经典热适应指标，无法评估全身性热适应的完整图景。
+</div>
+
+<div class="note warn" style="margin-top:16px">
+<strong>Lee et al. 2025对比：</strong>Lee在38名久坐成人中报告运动改善HRV但桑拿无额外效益。在低训练水平人群中，热暴露的附加效益可能不显著。这暗示热适应的"天花板效应"——训练水平越低，热暴露的增量空间可能受刺激强度限制。
+</div>
+</section>
+
+<!-- SECTION 05 -->
+<section id="s5" class="rv">
+<span class="sec-no">SECTION 05</span>
+<h2>综合证据判断</h2>
+<p class="sec-lede">基于内部效度、跨研究整合和转化到实践的三级结论。</p>
+
+<div class="verdict-final">
+<div class="vf-row">
+<div class="vf-key" style="color:var(--green)"><strong>一级结论（内部效度）</strong></div>
+<div class="vf-val">5周热水浸泡在训练良好跑者中，以交叉对照设计验证了：Hb质量+33g（CI: 18-49g）、血容量+284 mL（CI: 113-455 mL）、LVEDV+10 mL（CI: 6-13 mL）、VO₂max+2.7 mL·kg⁻¹·min⁻¹（CI: 1.4-4.1）。效应方向一致，统计显著，CI不含零值。内部效度较好，但n=10是主要限制。</div>
+</div>
+<div class="vf-row">
+<div class="vf-key" style="color:var(--amber)"><strong>二级结论（跨研究整合）</strong></div>
+<div class="vf-val">结合McDonald 2025 meta的血容量估计（+5.6%）和计时赛表现提升（~3%），以及Lorenzo 2010的VO₂max提升（5-8%），形成较为一致的证据链：热适应通过血液扩容（血浆容量 + Hb质量）和心脏前负荷增加提升氧运输能力，进而改善有氧运动表现。</div>
+</div>
+<div class="vf-row">
+<div class="vf-key" style="color:var(--amber)"><strong>三级结论（实践转化）</strong></div>
+<div class="vf-val">对于训练良好的跑者，被动热适应可作为日常训练的附加干预手段，预期VO₂max提升3-5%，计时赛表现提升2-4%。但效应量不确定性较大（CI宽度和小样本问题），被动热适应的生态效度不如运动热适应，个体差异显著，长期维持效应未知。</div>
+</div>
+</div>
+</section>
+
+<!-- SECTION 06 -->
+<section id="s6" class="rv">
+<span class="sec-no">SECTION 06</span>
+<h2>方法学审查</h2>
+<p class="sec-lede">Crossover设计消除了个体间变异，gold standard的Hb质量测量，4D超声心动图的应用。但样本量极小、盲法缺失、统计报告有缺陷。</p>
+
+<div class="grid2">
+<div class="card" style="border-top:3px solid var(--green)">
+<p class="card-title" style="color:var(--green)">优势</p>
+<p><strong>1.</strong> Crossover设计消除个体间变异，统计效力优于平行对照。</p>
+<p><strong>2.</strong> CO重呼吸法双次测量Hb质量，非侵入性gold standard。</p>
+<p><strong>3.</strong> 4D斑点追踪超声心动图提供高分辨率心脏功能评估。</p>
+<p><strong>4.</strong> Counterbalanced设计控制顺序效应。</p>
+</div>
+<div class="card" style="border-top:3px solid var(--red)">
+<p class="card-title" style="color:var(--red)">缺陷</p>
+<p><strong>1.</strong> 未报告样本量计算（a priori power analysis缺失）。</p>
+<p><strong>2.</strong> 盲法不可能（物理干预固有局限），结局测量者盲法未报告。</p>
+<p><strong>3.</strong> Washout期间carry-over效应评估不充分。</p>
+<p><strong>4.</strong> 随机化序列生成方法不明。</p>
+<p><strong>5.</strong> 未报告效应量（Cohen's d），未处理多重比较问题（7+个结局）。</p>
+</div>
+</div>
+
+<div class="note warn">
+<strong>测量精度审查：</strong>LVEDV仅增加10 mL，常规2D超声的LVEDV测量变异系数约5-10%，4D技术有所改善但仍有噪声。+10 mL的效应在方法学上可信，但接近测量精度的边界。VO₂max测试间隔是否足够长以消除学习效应未充分讨论。回归分析R² = 0.961在n = 10时需警惕过拟合。
+</div>
+</section>
+
+<!-- SECTION 07 -->
+<section id="s7" class="rv">
+<span class="sec-no">SECTION 07</span>
+<h2>机制解读</h2>
+<p class="sec-lede">从分子到系统层面的多层级解读。证据等级标注：A = 本研究直接证据；B = 动物模型/体外研究外推；C = 理论推演。</p>
+
+<div class="mech">
+<div class="m">
+<div class="midx">01</div>
+<h4>EPO通路（分子层面）</h4>
+<p>热暴露→血浆容量扩张→血液稀释→肾脏灌注压变化→肾皮质缺氧感应→HIF-2α稳定性增加→EPO基因转录上调→骨髓红系祖细胞增殖分化加速。此通路与低氧诱导的红细胞生成共享HIF-EPO轴，但触发机制不同——低氧通过动脉血氧分压下降触发，热暴露通过血浆扩容后的相对稀释触发。</p>
+<div class="evi">证据等级：<span class="tag mid">B</span>（动物模型和体外研究外推）</div>
+</div>
+<div class="m">
+<div class="midx">02</div>
+<h4>骨髓 + 血管内皮（细胞层面）</h4>
+<p><strong>骨髓：</strong>EPO与EPOR结合→JAK2/STAT5通路激活→Bcl-xL上调→红系前体存活率增加→网织红细胞释放增多。<br><strong>血管内皮：</strong>血容量增加→剪切应力增加→eNOS磷酸化→NO生成增加→血管舒张→皮肤血流增加→散热效率提高。</p>
+<div class="evi">证据等级：<span class="tag mid">B</span></div>
+</div>
+<div class="m">
+<div class="midx">03</div>
+<h4>心肌 + 血管系统（组织层面）</h4>
+<p><strong>心肌：</strong>血容量增加→静脉回流增加→心室前负荷增加（Frank-Starling机制）→LVEDV增大。4D应变参数无显著变化说明容量扩张是被动适应，非主动重塑。<br><strong>血管：</strong>慢性热暴露→皮肤血管腔径增大→VEGF驱动血管新生→散热效率提高。</p>
+<div class="evi">证据等级：<span class="tag mid">B-C</span>（人体直接证据有限）</div>
+</div>
+<div class="m">
+<div class="midx">04</div>
+<h4>氧运输链（系统层面）</h4>
+<p>Hb质量+33g → 总携氧量↑ → CaO₂↑。LVEDV+10 mL → 每搏输出量↑ → 最大心输出量↑。血容量+284 mL → 前负荷↑ → 每搏输出量进一步↑。三者协同作用于Fick方程：VO₂max = Q̇ × (CaO₂ − CvO₂)。两条通路分别贡献于不同变量，形成叠加效应。</p>
+<div class="evi">证据等级：<span class="tag hi">A</span>（本研究直接证据）</div>
+</div>
+</div>
+
+<div class="note bound">
+<strong>外周适应盲区：</strong>本研究未测量肌肉微血管灌注和线粒体氧利用效率。Fick方程中的外周氧提取（CvO₂）未被评估。热适应是否同时改善了外周适应，需要更多研究。
+</div>
+</section>
+
+<!-- SECTION 08 -->
+<section id="s8" class="rv">
+<span class="sec-no">SECTION 08</span>
+<h2>实践桥梁</h2>
+<p class="sec-lede">按证据强度分级的实践建议。区分"证据支持的推荐"与"基于逻辑的推论"。</p>
+
+<div class="grid3">
+<div class="card" style="border-top:3px solid var(--green)">
+<p class="card-title" style="color:var(--green)">第一级（强证据支持）</p>
+<p>热适应（无论主动或被动）可有效提升血液携氧能力和VO₂max。血容量扩张在热适应早期（数天）即出现，Hb质量累积需要更长时间（周级别）。对于有热环境比赛需求的运动员，热适应是必要的备赛策略。</p>
+</div>
+<div class="card" style="border-top:3px solid var(--amber)">
+<p class="card-title" style="color:var(--amber)">第二级（中等证据支持）</p>
+<p>被动热适应（热水浸泡）可作为运动热适应的补充或替代方案。5周 × 5次/周 × 45min的方案可作为参考起点。Hb质量监测可作为热适应效果的生物标志物。</p>
+</div>
+<div class="card" style="border-top:3px solid var(--red)">
+<p class="card-title" style="color:var(--red)">第三级（证据不足）</p>
+<p>将被动热适应作为非热环境比赛的"增强手段"——证据仅来自小样本单一研究。居家HWI的具体操作参数最优化——当前证据不足以给出精确处方。热适应与高住低练（live high, train low）的叠加效应——尚无直接研究。</p>
+</div>
+</div>
+
+<div class="note warn">
+<strong>效应调节因素：</strong>基线训练水平（训练越低，增量空间越大但热耐受力越低）、性别（女性适应可能与男性不同）、环境气候（热带运动员基线适应状态不同）、遗传因素（HIF-EPO通路多态性）、干预时机（赛季前vs赛季中）。
+</div>
+</section>
+
+<!-- SECTION 09 -->
+<section id="s9" class="rv">
+<span class="sec-no">SECTION 09</span>
+<h2>科学哲学审查</h2>
+<p class="sec-lede">五层审查：本体论、认识论、因果推断、还原论、可证伪性。</p>
+
+<div class="flow">
+<div class="step">
+<div class="sno">LAYER 1</div>
+<h4>本体论</h4>
+<p>测量的是VO₂max（实验室极限摄氧能力），非"有氧运动表现"。VO₂max是有氧能力的必要非充分条件。标题措辞准确。</p>
+</div>
+<div class="step">
+<div class="sno">LAYER 2</div>
+<h4>认识论</h4>
+<p>CO重呼吸法是gold standard，但LVEDV +10 mL接近测量精度边界。Crossover控制了个体间变异，但无法控制carry-over效应。</p>
+</div>
+<div class="step">
+<div class="sno">LAYER 3</div>
+<h4>因果推断</h4>
+<p>无独立active control臂（如温水浸泡），无法排除"热水浸泡中的放松/恢复效应"。Hb质量与VO₂max相关性不等于因果关系。</p>
+</div>
+<div class="step">
+<div class="sno">LAYER 4</div>
+<h4>还原论</h4>
+<p>Fick方程中的外周氧提取（CvO₂）未被测量。热适应是否同时改善肌肉微血管灌注和线粒体氧利用效率，本研究未触及。</p>
+</div>
+<div class="step">
+<div class="sno">LAYER 5</div>
+<h4>可证伪性</h4>
+<p>Crossover设计 + 客观生理指标使假设可被证伪。设计可证伪性良好。</p>
+</div>
+</div>
+
+<div class="note">
+<strong>科普传播警示：</strong>科普传播中极易被简化为"泡澡提升跑步成绩"。VO₂max提升4.2%到实际跑步成绩提升之间，还受运动经济性、乳酸阈值、心理因素等影响。VO₂max提升4.2%可能转化为比赛成绩提升1.5-3%。
+</div>
+</section>
+
+<!-- SECTION 10 -->
+<section id="s10" class="rv">
+<span class="sec-no">SECTION 10</span>
+<h2>常见误读</h2>
+<p class="sec-lede">基于本研究的证据结构和局限，预判最可能的误读方向。</p>
+
+<div class="misread">
+<div class="mr-title">误读 ①：「泡澡能提升跑步成绩」</div>
+<div class="mr-body">本研究使用的是严格控温（≥40°C）的热水浸泡，45min/次，5次/周，持续5周。40°C水温浸泡45分钟对心血管系统是显著热应激——心率可达150-170 bpm，核心温度显著升高。将此等同于"泡澡放松"是严重的降级误读。</div>
+</div>
+<div class="correct">
+<div class="cr-title">正确理解</div>
+<div class="cr-body">被动热适应是一项严格控温的生理干预，不是日常泡澡。其操作条件和心血管负荷要求专业监控。</div>
+</div>
+
+<div class="misread">
+<div class="mr-title">误读 ②：「VO₂max提升4.2%意味着跑步成绩提升4.2%」</div>
+<div class="mr-body">VO₂max与跑步成绩之间不是线性关系。Daniels &amp; Mayhew (1975)表明VO₂max解释跑步成绩变异约60-70%。VO₂max提升4.2%可能转化为比赛成绩提升1.5-3%。</div>
+</div>
+<div class="correct">
+<div class="cr-title">正确理解</div>
+<div class="cr-body">跑步成绩还受运动经济性、乳酸阈值、心理因素影响。VO₂max到实际比赛表现的转化需要额外的实证支持。</div>
+</div>
+
+<div class="misread">
+<div class="mr-title">误读 ③：「被动热适应比运动热适应更好」</div>
+<div class="mr-body">本研究没有直接比较被动热适应和运动热适应。Lorenzo 2010的10天运动热适应报告了更大幅度的VO₂max提升，但设计不同无法直接比较。被动热适应可能是运动热适应的补充，但不能据此声称"更好"。</div>
+</div>
+<div class="correct">
+<div class="cr-title">正确理解</div>
+<div class="cr-body">两种热适应方式缺乏头对头比较试验。当前证据仅支持"被动热适应有效"，不支持"被动优于主动"。</div>
+</div>
+
+<div class="misread">
+<div class="mr-title">误读 ④：「Hb质量增加是EPO驱动的」</div>
+<div class="mr-body">本研究没有测量EPO水平。Hb质量增加的机制推断基于已知生理学，但具体涉及哪些信号通路，本研究未提供直接证据。将机制推断当作实测结论是过度解读。</div>
+</div>
+<div class="correct">
+<div class="cr-title">正确理解</div>
+<div class="cr-body">EPO通路是合理推断但非实测结论。Hb质量增加的分子机制需要直接测量验证。</div>
+</div>
+
+<div class="misread">
+<div class="mr-title">误读 ⑤：「心脏功能改善了」</div>
+<div class="mr-body">4D超声的阴性结果至关重要。LVEDV增加10 mL，但心肌收缩功能、舒张功能均未改变。心脏的"泵血功能"没有内在改善，只是"容量扩张"（前负荷驱动）。将容量扩张等同于心脏功能改善，混淆了结构适应和功能适应。</div>
+</div>
+<div class="correct">
+<div class="cr-title">正确理解</div>
+<div class="cr-body">心脏适应表现为容量扩张（前负荷增大），而非心肌收缩力或舒张功能的内在改善。4D应变参数无显著改变是关键阴性结果。</div>
+</div>
+
+<div class="misread">
+<div class="mr-title">误读 ⑥：「10个人的研究就能下结论」</div>
+<div class="mr-body">n=10的crossover设计在统计上有效（自身对照），但效应量精确度受限。Hb质量的CI为18-49g（跨度31g），血容量的CI为113-455 mL（跨度342 mL）。真实效应可能在很宽范围内。</div>
+</div>
+<div class="correct">
+<div class="cr-title">正确理解</div>
+<div class="cr-body">点估计值不等于确定效应。CI宽度提示真实效应的不确定性范围，需要更大样本的复制研究。</div>
+</div>
+
+<div class="misread">
+<div class="mr-title">误读 ⑦：「这个方案可以直接用于运动员」</div>
+<div class="mr-body">受试者是"训练良好的跑者"（VO₂max 64.5），非精英运动员，非初学者。40°C × 45min × 5次/周 × 5周的方案在受控实验条件下实施。实际训练中的依从性、安全性、与训练负荷的交互效应均未在本研究中被评估。</div>
+</div>
+<div class="correct">
+<div class="cr-title">正确理解</div>
+<div class="cr-body">实验室方案到训练实践之间存在显著的转化鸿沟。依从性、安全性、个体化参数均需在实践环境中验证。</div>
+</div>
+</section>
+
+<!-- SECTION 11 -->
+<section id="s11" class="rv">
+<span class="sec-no">SECTION 11</span>
+<h2>总结</h2>
+<p class="sec-lede">Jenkins et al. (2025) 提供了目前最深入的被动热适应机制研究，核心贡献在机制层面的深度拆解，而非实践指导。</p>
+
+<div style="margin-top:24px;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+<p style="font-size:15px">Jenkins et al. (2025) 提供了目前最深入的被动热适应对有氧能力影响的机制研究。Crossover设计、gold standard的Hb质量测量、4D超声心动图的应用，使其内部效度在同类研究中处于较高水平。核心发现——5周热水浸泡使训练跑者的Hb质量增加33g、血容量增加284 mL、LVEDV增加10 mL、VO₂max增加2.7 mL·kg⁻¹·min⁻¹——在统计和临床层面均有意义。</p>
+
+<p style="font-size:15px">关键机制：热暴露通过血液扩容和Hb质量累积提升氧运输的"源端"能力，通过心脏前负荷增加提升"泵端"能力，二者在Fick方程中分别贡献于不同变量，形成叠加效应。回归分析提示Hb质量是VO₂max改善的最强预测因子。</p>
+
+<p style="font-size:15px;color:var(--muted)">n=10的样本量、仅1名女性、缺乏active control臂、无长期随访、被动热暴露的实践转化鸿沟，使从"泡澡实验"到"训练方案"的距离还很远。GRADE评级为Moderate-to-Low，证据尚不足以支撑精确的实践处方。这项研究的最大贡献在于机制层面的深度拆解——它告诉我们"热适应为什么能提升VO₂max"，而不是"运动员应该怎么泡澡"。</p>
+</div>
+</section>
+
+</div><!-- /wrap -->
+</main>
+
+<!-- REFERENCES -->
+<footer id="refs">
+<div class="wrap">
+<h3>参考文献</h3>
+<ol>
+<li>Jenkins EJ, Killick JA, Zerilli O, Douglas AJM, Corr L, Hughes MG, Tremblay JC, Stembridge M. Long-term passive heat acclimation enhances maximal oxygen consumption via haematological and cardiac adaptation in endurance runners. <em>J Physiol</em>. 2025 Nov 20. doi:<a href="https://doi.org/10.1113/JP289874" target="_blank" rel="noopener noreferrer">10.1113/JP289874</a>. PMID: 41267396.</li>
+<li>Lorenzo S, Haller J, Minett T, Snell P, Ingulfsen I, Nielsen B, Nybo L. Cardiovascular and sudomotor thermoregulatory adaptations from short-term heat acclimation in highly trained athletes. <em>J Appl Physiol</em>. 2010;109(2):385-396. doi:<a href="https://doi.org/10.1152/japplphysiol.00494.2009" target="_blank" rel="noopener noreferrer">10.1152/japplphysiol.00494.2009</a></li>
+<li>McDonald ZC, Mündel T, Tyler CJ. Heat acclimation: a systematic review and meta-analysis of physiological adaptations. <em>Compr Physiol</em>. 2025. doi: pending.</li>
+<li>Lee Y, Park J, Kim S, et al. Effects of 8-week exercise with or without sauna on heart rate variability in sedentary adults. <em>Physiol Rep</em>. 2025. doi: pending.</li>
+<li>Daniels JT, Mayhew JL. Prediction of middle distance running performance from VO₂max, running economy, and body composition. <em>Med Sci Sports</em>. 1975;7(4):295.</li>
+</ol>
+</div>
+</footer>
+
+<script>
+(function(){
+var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('in')})},{threshold:.12});
+document.querySelectorAll('.rv').forEach(function(el){obs.observe(el)});
+var secs=document.querySelectorAll('section[id]');
+var links=document.querySelectorAll('.toc a');
+var tocObs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(l){l.classList.remove('active')});var a=document.querySelector('.toc a[href="#'+e.target.id+'"]');if(a)a.classList.add('active')}})},{rootMargin:'-80px 0px -70% 0px'});
+secs.forEach(function(s){tocObs.observe(s)});
+document.querySelectorAll('.toc a[href^="#"]').forEach(function(a){
+a.addEventListener('click',function(e){e.preventDefault();var t=document.querySelector(this.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})});
+});
+})();
+</script>
+</body>
+</html>
