@@ -109,6 +109,10 @@ body{font-family:var(--font);color:var(--text);background:var(--surface);line-he
 .mark-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:20px;transition:all .2s;font-family:var(--font)}
 .mark-btn:hover{background:var(--primary-light)}
 .mark-btn.done{background:#27ae60}
+.hw-submit-bar{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+.hw-submit-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:1.5px solid var(--primary);color:var(--primary);background:transparent;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:var(--font)}
+.hw-submit-btn:hover{background:var(--primary);color:#fff}
+.hw-submit-btn.copied{background:#27ae60;color:#fff;border-color:#27ae60}
 .essay-ta{width:100%;min-height:80px;padding:10px;border:1px solid var(--border);border-radius:6px;font-family:var(--font);font-size:14px;resize:vertical;line-height:1.7}
 .essay-ta:focus{outline:none;border-color:var(--primary)}
 table.kt{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
@@ -559,6 +563,13 @@ const isDone=mode==='hb'?lp.hc:lp.wc;
 const label=mode==='hb'?'标记手册已学习':'标记作业已完成';
 const fn=mode==='hb'?'tHC':'tWC';
 html+=`<button class="mark-btn ${isDone?'done':''}" onclick="${fn}('${lid}')">${isDone?'✓ 已完成':'✓ '+label}</button>`;
+// Add homework submission buttons
+if(mode==='hw'){
+html+=`<div class="hw-submit-bar">
+<button class="hw-submit-btn" id="copy-summary-${lid}" onclick="copySummary('${lid}')">📋 复制提交摘要</button>
+<button class="hw-submit-btn" onclick="mailToInstructor('${lid}')">✉️ 邮件发送给讲师</button>
+</div>`;
+}
 ct.innerHTML=`<div class="hw-section">${html}</div>`;
 // Post-process: inject inputs into knowledge map tables
 setTimeout(()=>{
@@ -956,6 +967,89 @@ function toggleAnswers(panelId,btnId){
     panel.style.display='none';
     btn.textContent='显示参考答案与课本原文';
   }
+}
+
+function generateSummary(lid){
+  const meta=D.meta[lid];
+  if(!meta)return '';
+  const lines=[];
+  lines.push('=== 涌现90天 作业提交摘要 ===');
+  lines.push('课程：Lesson '+meta.num+' - '+meta.title);
+  lines.push('学员：'+CU);
+  lines.push('日期：'+new Date().toLocaleString('zh-CN'));
+  lines.push('');
+  // Collect fill-in answers from localStorage
+  const fillPrefix='course_fill_';
+  const allKeys=Object.keys(localStorage);
+  const relevantKeys=allKeys.filter(k=>k.startsWith(fillPrefix)&&k.includes('fill-'+lid+'-hw-'));
+  if(relevantKeys.length>0){
+    lines.push('--- 填空题作答 ---');
+    relevantKeys.sort().forEach((k,idx)=>{
+      const val=localStorage.getItem(k);
+      if(val){
+        const qNum=idx+1;
+        lines.push(qNum+'. '+val);
+      }
+    });
+    lines.push('');
+  }
+  // Collect quiz answers from progress state
+  const pr2=gP(CU);
+  const lp2=pr2[lid]||{};
+  const hwState=lp2['hwS']||{};
+  const quizAnswers=[];
+  Object.keys(hwState).forEach(k=>{
+    const match=k.match(/^(.+)_s$/);
+    if(match&&hwState[k]){
+      quizAnswers.push({qid:match[1],answer:hwState[k]});
+    }
+  });
+  if(quizAnswers.length>0){
+    lines.push('--- 选择题作答 ---');
+    quizAnswers.forEach((qa,idx)=>{
+      lines.push('第'+(idx+1)+'题：'+qa.answer);
+    });
+    lines.push('');
+  }
+  // Completion status
+  const pr=gP(CU);
+  const lp=pr[lid]||{};
+  lines.push('--- 完成状态 ---');
+  lines.push('课本已读：'+(lp.tr?'✓':'✗'));
+  lines.push('手册已学：'+(lp.hc?'✓':'✗'));
+  lines.push('作业已完成：'+(lp.wc?'✓':'✗'));
+  lines.push('');
+  lines.push('==============================');
+  return lines.join('\n');
+}
+
+function copySummary(lid){
+  const summary=generateSummary(lid);
+  const btn=document.getElementById('copy-summary-'+lid);
+  navigator.clipboard.writeText(summary).then(()=>{
+    if(btn){btn.textContent='✓ 已复制到剪贴板';btn.classList.add('copied');
+      setTimeout(()=>{btn.textContent='📋 复制提交摘要';btn.classList.remove('copied')},3000);
+    }
+  }).catch(()=>{
+    // Fallback: textarea copy
+    const ta=document.createElement('textarea');
+    ta.value=summary;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');
+      if(btn){btn.textContent='✓ 已复制到剪贴板';btn.classList.add('copied');
+        setTimeout(()=>{btn.textContent='📋 复制提交摘要';btn.classList.remove('copied')},3000);
+      }
+    }catch(e){alert('复制失败，请手动选择摘要内容');}
+    document.body.removeChild(ta);
+  });
+}
+
+function mailToInstructor(lid){
+  const meta=D.meta[lid];
+  const title='[涌现90天] Lesson '+meta.num+' 作业提交 - '+CU;
+  const body=encodeURIComponent(generateSummary(lid));
+  const instructorEmail='rise@3hfit.com';
+  window.location.href='mailto:'+instructorEmail+'?subject='+encodeURIComponent(title)+'&body='+body;
 }
 </script>
 </body>
